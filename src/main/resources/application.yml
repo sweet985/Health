@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: health-app
+  datasource:
+    url: jdbc:mysql://localhost:3306/health_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: ThisIsAVeryLongSecretKeyForHS512SecurityThatMustBeAtLeast64BytesLongToMeetTheRequirementsOfTheAlgorithm # 86 chars
+  expiration: 86400000 # 1 day
+
+deepseek:
+  api:
+    url: https://api.deepseek.com/chat/completions
+    key: sk-10dde1f218934340833eeb1cf311998a
+    key2: sk-03a50481efce4d3d9f6ef2021fe621a0
+    model: deepseek-chat
