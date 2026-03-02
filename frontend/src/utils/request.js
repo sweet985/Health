@@ -26,7 +26,7 @@ service.interceptors.response.use(
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || 'Error')
-      if (res.code === 401) {
+      if (res.code === 401 || res.code === 403) {
         const userStore = useUserStore()
         userStore.logout()
         router.push('/login')
@@ -37,7 +37,14 @@ service.interceptors.response.use(
     }
   },
   error => {
-    ElMessage.error(error.message)
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      const userStore = useUserStore()
+      userStore.logout()
+      router.push('/login')
+      ElMessage.error('登录过期或权限不足，请重新登录')
+    } else {
+      ElMessage.error(error.message || 'Request Error')
+    }
     return Promise.reject(error)
   }
 )
