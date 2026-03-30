@@ -3,6 +3,21 @@
     <div class="header-section">
       <h2>治愈宝库</h2>
       <p>发现美好，疗愈心灵</p>
+      
+      <div class="search-box">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索治愈内容（如：音乐、金句...）"
+          class="treasure-search"
+          clearable
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        >
+          <template #append>
+            <el-button :icon="Search" @click="handleSearch" />
+          </template>
+        </el-input>
+      </div>
     </div>
 
     <el-tabs v-model="activeName" @tab-click="handleClick" class="custom-tabs">
@@ -63,19 +78,26 @@
       <!-- 治愈音乐 -->
       <el-tab-pane label="治愈音乐" name="3">
          <div class="music-list" v-if="activeName === '3' && list.length > 0">
-            <div v-for="item in list" :key="item.id" class="music-item fade-in-up">
-              <div class="music-cover">
-                <el-icon :size="30" color="#fff"><Headset /></el-icon>
+            <div v-for="item in list" :key="item.id" class="music-item fade-in-up" @click="playMusic(item)">
+              <div class="music-cover" :class="{ 'is-playing': isCurrentMusic(item) && musicStore.isPlaying }">
+                <el-icon :size="24" color="#fff" class="spin-icon" v-if="isCurrentMusic(item) && musicStore.isPlaying"><Headset /></el-icon>
+                <el-icon :size="30" color="#fff" v-else><Headset /></el-icon>
               </div>
               <div class="music-info">
-                <span class="music-title">{{ item.title || '未知曲目' }}</span>
+                <span class="music-title" :class="{ 'active-title': isCurrentMusic(item) }">{{ item.title || '未知曲目' }}</span>
                 <span class="music-desc">治愈心灵的旋律</span>
               </div>
-              <audio controls :src="item.content" class="audio-player"></audio>
+              <div class="music-action">
+                <el-button circle type="primary" plain @click.stop="playMusic(item)">
+                  <el-icon><VideoPause v-if="isCurrentMusic(item) && musicStore.isPlaying" /><VideoPlay v-else /></el-icon>
+                </el-button>
+              </div>
             </div>
          </div>
          <el-empty v-else-if="activeName === '3' && !loading" description="暂无数据" />
-         <div v-else-if="activeName === '3' && loading" class="loading-container">加载中...</div>
+         <div v-else-if="activeName === '3' && loading" class="loading-container">
+           <el-skeleton :rows="3" animated />
+         </div>
       </el-tab-pane>
 
       <!-- 治愈视频 -->
@@ -116,15 +138,27 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import request from '../utils/request'
-import { ChatLineSquare, Headset, Refresh } from '@element-plus/icons-vue'
+import { ChatLineSquare, Headset, Refresh, VideoPlay, VideoPause, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useMusicStore } from '../stores/music'
 
 const activeName = ref('1')
 const list = ref([])
 const loading = ref(false)
+const searchKeyword = ref('')
 let currentRequestId = 0
 
-const load = async (specificType) => {
+const musicStore = useMusicStore()
+
+const isCurrentMusic = (item) => {
+  return musicStore.currentMusic && musicStore.currentMusic.id === item.id
+}
+
+const playMusic = (item) => {
+  musicStore.togglePlay(item)
+}
+
+const load = async (specificType, isSearch = false) => {
   const requestId = ++currentRequestId
   const type = specificType || activeName.value
   
@@ -132,8 +166,15 @@ const load = async (specificType) => {
   list.value = []
   
   try {
-    console.log(`[Req:${requestId}] Loading treasure list for type:`, type)
-    const endpoint = (type === '1' || type === '2') ? `/healing/random/${type}?limit=6` : `/healing/list/${type}`
+    let endpoint = ''
+    if (isSearch && searchKeyword.value.trim()) {
+      console.log(`[Req:${requestId}] Searching treasure for type: ${type}, keyword: ${searchKeyword.value}`)
+      endpoint = `/healing/search?type=${type}&keyword=${encodeURIComponent(searchKeyword.value.trim())}`
+    } else {
+      console.log(`[Req:${requestId}] Loading treasure list for type:`, type)
+      endpoint = (type === '1' || type === '2') ? `/healing/random/${type}?limit=6` : `/healing/list/${type}`
+    }
+    
     const res = await request.get(endpoint)
     
     if (requestId === currentRequestId) {
@@ -150,7 +191,12 @@ const load = async (specificType) => {
   }
 }
 
+const handleSearch = () => {
+  load(activeName.value, true)
+}
+
 const handleClick = (tab) => {
+  searchKeyword.value = '' // Clear search when switching tabs
   load(tab.props.name)
 }
 
@@ -185,6 +231,29 @@ onMounted(() => {
 .header-section p {
   color: #7f8c8d;
   font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.search-box {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+:deep(.treasure-search .el-input__wrapper) {
+  border-radius: 20px 0 0 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+:deep(.treasure-search .el-input-group__append) {
+  border-radius: 0 20px 20px 0;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+:deep(.treasure-search .el-input-group__append:hover) {
+  background-color: #66b1ff;
 }
 
 /* Custom Tabs */
@@ -327,9 +396,11 @@ onMounted(() => {
   align-items: center;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
   transition: transform 0.2s;
+  cursor: pointer;
 }
 .music-item:hover {
   transform: scale(1.01);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 .music-cover {
   width: 50px;
@@ -341,6 +412,18 @@ onMounted(() => {
   justify-content: center;
   margin-right: 20px;
   box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
+  transition: all 0.3s;
+}
+.music-cover.is-playing {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  box-shadow: 0 4px 10px rgba(255, 154, 158, 0.3);
+}
+.spin-icon {
+  animation: spin 4s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 .music-info {
   flex: 1;
@@ -351,14 +434,17 @@ onMounted(() => {
   font-weight: 600;
   color: #333;
   font-size: 1.1rem;
+  transition: color 0.3s;
+}
+.music-title.active-title {
+  color: #ff9a9e;
 }
 .music-desc {
   font-size: 0.9rem;
   color: #999;
 }
-.audio-player {
-  height: 36px;
-  width: 300px;
+.music-action {
+  margin-left: 20px;
 }
 
 /* Video Styles */

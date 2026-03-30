@@ -29,4 +29,13 @@ public class HealingController {
         List<Resource> resources = resourceService.getRandomByType(type, limit);
         return CommonResult.success(resources);
     }
+
+    @GetMapping("/search")
+    public CommonResult<List<Resource>> searchResources(
+            @RequestParam(required = false) Integer type,
+            @RequestParam String keyword) {
+        System.out.println("Searching resources for type: " + type + ", keyword: " + keyword);
+        List<Resource> resources = resourceService.searchResources(type, keyword);
+        return CommonResult.success(resources);
+    }
 }

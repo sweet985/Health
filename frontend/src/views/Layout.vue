@@ -1,7 +1,10 @@
 <template>
   <el-container class="layout-container">
     <el-header class="header">
-      <div class="logo">心理健康平台</div>
+      <div class="logo" @click="$router.push('/home')" style="cursor: pointer;">
+        <img src="/logo.png" alt="logo" class="logo-img" @error="handleImageError" />
+        心愈空间
+      </div>
       <el-menu mode="horizontal" router :default-active="$route.path" class="menu">
         <el-menu-item index="/home">首页</el-menu-item>
         <el-menu-item index="/treehole">匿名树洞</el-menu-item>
@@ -22,15 +25,22 @@
     <el-main>
       <router-view />
     </el-main>
+    <GlobalMusicPlayer />
   </el-container>
 </template>
 
 <script setup>
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
+import GlobalMusicPlayer from '../components/GlobalMusicPlayer.vue'
 
 const userStore = useUserStore()
+
 const router = useRouter()
+
+const handleImageError = (e) => {
+  e.target.style.display = 'none'
+}
 
 const logout = () => {
   userStore.logout()
@@ -47,9 +57,18 @@ const logout = () => {
   border-bottom: 1px solid #dcdfe6;
 }
 .logo {
+  display: flex;
+  align-items: center;
   font-size: 20px;
   font-weight: bold;
-  color: #409eff;
+  color: #ff9a9e; /* Changed to match the logo color */
+}
+.logo-img {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 .menu {
   flex: 1;

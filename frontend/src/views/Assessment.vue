@@ -27,7 +27,8 @@
       :show-close="false"
       class="test-dialog"
     >
-      <div class="test-wrapper" v-if="currentTest">
+      <!-- Question View -->
+      <div class="test-wrapper" v-if="!showResult && currentTest">
         <!-- Header -->
         <div class="test-header">
           <el-button circle icon="Back" @click="closeTest" class="back-btn"></el-button>
@@ -132,11 +133,27 @@
           </div>
           <h3>{{ resultTitle }}</h3>
           <p class="result-desc">{{ resultDesc }}</p>
-          <div class="ai-report" v-if="aiReport">
-            <h4><el-icon><DataAnalysis /></el-icon> AI 智能分析报告</h4>
-            <div class="report-content">{{ aiReport }}</div>
+          
+          <div class="formal-report-wrapper" v-show="aiReport">
+            <div class="report-header">
+              <h2>心愈空间 · 专属测评报告</h2>
+              <div class="report-meta">
+                <span><strong>测评项目：</strong>{{ currentTest?.name }}</span>
+                <span><strong>测评得分：</strong>{{ resultScore }} 分</span>
+                <span><strong>生成日期：</strong>{{ new Date().toLocaleDateString() }}</span>
+              </div>
+            </div>
+            
+            <div ref="chartRef" class="chart-container" v-show="showChart"></div>
+            
+            <div class="report-content markdown-body" v-html="aiReport"></div>
+            
+            <div class="report-footer">
+              <p>※ 声明：本报告由 AI 深度分析生成，辅助您了解当前心理状态，不作为专业医疗诊断依据。如需确诊，请前往正规医疗机构。</p>
+            </div>
           </div>
-          <el-button type="primary" round size="large" @click="closeTest">返回测评中心</el-button>
+          
+          <el-button type="primary" round size="large" @click="closeTest" class="close-btn">返回测评中心</el-button>
         </div>
       </div>
     </el-dialog>
@@ -144,10 +161,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessageBox, ElMessage, ElLoading } from 'element-plus'
 import { Back, ArrowLeft, ArrowRight, VideoPause, Check, DataAnalysis } from '@element-plus/icons-vue'
 import { scl90, sds, sas, pss, les, psqi, epq } from '../data/assessments'
+import request from '../utils/request'
+import MarkdownIt from 'markdown-it'
+import * as echarts from 'echarts'
+
+const md = new MarkdownIt({ breaks: true })
+const chartRef = ref(null)
+const showChart = ref(false)
 
 // Test Data Definitions
 const tests = [
@@ -305,140 +329,132 @@ const pauseTest = () => {
 }
 
 const calculateResult = () => {
+  // Check if all questions are answered
+  if (answers.value.some(a => a === undefined)) {
+    ElMessage.warning('请回答完所有问题后再提交')
+    return
+  }
+
   // Simple sum for demo purposes (real logic is complex)
   const total = answers.value.reduce((a, b) => a + (b || 0), 0)
   resultScore.value = total
   
-  // Generate AI Report
-  generateAIReport(currentTest.value.id, total, answers.value)
-  
+  // Show result view immediately
   showResult.value = true
+  
   // Clear saved progress on finish
   localStorage.removeItem(`assessment_${currentTest.value.id}`)
+  
+  // Wait for next tick so DOM is updated (result view is visible) before generating report and chart
+  nextTick(() => {
+    generateAIReport(currentTest.value.id, total, answers.value)
+  })
 }
 
-const generateAIReport = (testId, score, answers) => {
-  // Simulate AI generation delay
+const generateAIReport = async (testId, score, answersArray) => {
+  aiReport.value = ''
   const loading = ElLoading.service({
     lock: true,
-    text: 'AI 正在分析您的测评数据...',
+    text: 'AI 专家正在为您生成深度诊断报告，这可能需要几十秒钟，请耐心等待...',
     background: 'rgba(0, 0, 0, 0.7)',
   })
   
-  setTimeout(() => {
-    loading.close()
-    
-    // Dynamic report generation logic based on test type and score
-    let report = ''
-    
-    if (testId === 'sds') {
-      // SDS Standard Score = Raw Score * 1.25
-      const indexScore = Math.floor(score * 1.25)
-      let level = ''
-      let advice = ''
-      
-      if (indexScore < 53) {
-        level = '正常'
-        advice = '您的情绪状态非常健康，像晴朗的天空一样明媚。您拥有强大的心理韧性，能够积极应对生活中的挑战。请继续保持这种乐观的生活态度，多参与社交活动，分享您的快乐。'
-      } else if (indexScore < 63) {
-        level = '轻度抑郁'
-        advice = '您最近似乎有些情绪低落，就像天空偶尔飘过的乌云。这可能是对近期压力的一种正常反应。建议您多晒晒太阳，进行适量的运动（如慢跑、瑜伽），并尝试记录“感恩日记”，每天写下三件值得开心的小事。'
-      } else if (indexScore < 73) {
-        level = '中度抑郁'
-        advice = '您的内心世界可能正在经历一场连绵的阴雨，感到疲惫和无助。这并不是软弱的表现，而是心灵在呼救。建议您调整生活节奏，给自己一段“假期”，同时强烈建议咨询心理咨询师，他们能为您提供专业的支持和疏导。'
-      } else {
-        level = '重度抑郁'
-        advice = '您目前正处于情绪的深渊中，感到极度的痛苦和绝望。请记住，这只是暂时的黑暗，您并不孤单。请务必寻求专业精神科医生或心理治疗师的帮助，药物治疗和心理治疗结合往往能带来转机。请哪怕是为了爱您的人，也要勇敢迈出求助的一步。'
+  try {
+    const testDetails = currentTest.value.questionsList.map((q, index) => {
+      const selectedValue = answersArray[index]
+      const selectedOption = q.options.find(opt => opt.value === selectedValue)
+      return {
+        question: q.text,
+        score: selectedValue,
+        answer: selectedOption ? selectedOption.text : '未答'
       }
-      report = `【SDS 抑郁自评结果】\n标准分：${indexScore}分\n评级：${level}\n\n【AI 深度分析与建议】\n${advice}`
-      
-    } else if (testId === 'sas') {
-      // SAS Standard Score = Raw Score * 1.25
-      const indexScore = Math.floor(score * 1.25)
-      let level = ''
-      let advice = ''
-      
-      if (indexScore < 50) {
-        level = '正常'
-        advice = '您的心态平和稳定，焦虑水平处于非常健康的范围内。您能够从容不迫地处理日常事务，这种松弛感是幸福生活的重要基石。'
-      } else if (indexScore < 60) {
-        level = '轻度焦虑'
-        advice = '您可能感到些许紧张和不安，就像绷紧的琴弦。建议尝试“4-7-8呼吸法”（吸气4秒，憋气7秒，呼气8秒）来快速放松神经。合理规划时间，减少不必要的担忧，专注于当下的行动。'
-      } else if (indexScore < 70) {
-        level = '中度焦虑'
-        advice = '焦虑似乎已经开始干扰您的生活，让您感到坐立难安。这种持续的警觉状态会消耗大量能量。建议您练习正念冥想，学习接纳而非对抗焦虑情绪。如果感到难以自控，寻求专业咨询会是非常明智的选择。'
-      } else {
-        level = '重度焦虑'
-        advice = '您的焦虑水平较高，可能伴随有心慌、出汗等躯体症状，这让您感到非常痛苦。请不要独自硬扛，专业的医疗干预（如抗焦虑药物或认知行为疗法）能有效缓解这些症状。请尽快咨询专业医生。'
-      }
-      report = `【SAS 焦虑自评结果】\n标准分：${indexScore}分\n评级：${level}\n\n【AI 深度分析与建议】\n${advice}`
+    })
 
-    } else if (testId === 'scl90') {
-      let level = ''
-      let advice = ''
-      if (score < 160) {
-        level = '心理健康状况良好'
-        advice = '综合各项指标，您的心理健康水平处于理想状态。您在身心各方面都表现出了良好的适应性。继续保持健康的生活方式，定期进行身心放松。'
-      } else if (score < 200) {
-        level = '轻度心理问题倾向'
-        advice = '您可能在某些方面（如躯体不适、人际敏感等）存在轻微的困扰。这通常与近期的生活事件或压力有关。建议您关注那些得分较高的具体症状，有针对性地进行自我调节。'
-      } else if (score < 250) {
-        level = '中度心理问题'
-        advice = '您的心理健康状况可能亮起了黄灯，某些症状已经明显影响到了您的生活质量。建议您进行更深入的心理评估，并考虑寻求心理咨询的帮助，以防问题进一步发展。'
-      } else {
-        level = '较重心理问题'
-        advice = '您的SCL-90总分较高，提示您可能正面临较为严重的心理困扰。这可能涉及多个方面，如情绪、思维或人际关系。强烈建议您前往正规医院的心理科或精神科进行专业诊断和治疗。'
-      }
-      report = `【SCL-90 综合评估结果】\n总分：${score}分\n评级：${level}\n\n【AI 深度分析与建议】\n${advice}\n(注：SCL-90是一个多维度量表，总分仅供参考，具体症状需结合各因子分分析。)`
-
-    } else if (testId === 'pss') {
-      // PSS-14 range 0-56
-      let level = ''
-      let advice = ''
-      if (score < 28) {
-        level = '压力适中'
-        advice = '您目前的压力水平在可控范围内，您具备良好的抗压能力和应对技巧。适当的压力可以转化为动力，助您更好地完成任务。'
-      } else {
-        level = '压力过大'
-        advice = '您目前感知到的压力较大，可能会觉得生活有些失控，感到力不从心。长期的压力会损害身心健康。建议您学会做减法，拒绝不必要的负担，并保证充足的睡眠和休息。'
-      }
-      report = `【PSS 感知压力评估】\n得分：${score}分\n评级：${level}\n\n【AI 深度分析与建议】\n${advice}`
-
-    } else if (testId === 'psqi') {
-      // PSQI range 0-21 (simplified logic here)
-      // Assuming our simplified calculation sums up options roughly
-      let level = ''
-      let advice = ''
-      if (score < 7) {
-        level = '睡眠质量很好'
-        advice = '恭喜您，您的睡眠质量很高！良好的睡眠是身心健康的基石。请继续保持规律的作息习惯。'
-      } else if (score < 14) {
-        level = '睡眠质量一般'
-        advice = '您的睡眠存在一些小问题，如入睡稍慢或偶尔易醒。建议睡前一小时远离电子屏幕，泡个热水澡或喝杯热牛奶助眠。'
-      } else {
-        level = '睡眠质量较差'
-        advice = '您可能存在较为严重的睡眠障碍。长期睡眠不足会影响情绪和免疫力。建议您建立严格的睡眠仪式，必要时咨询睡眠专科医生。'
-      }
-      report = `【PSQI 睡眠质量评估】\n得分：${score}分\n评级：${level}\n\n【AI 深度分析与建议】\n${advice}`
-
-    } else if (testId === 'les') {
-       // LES Higher is more stress impact
-       let level = ''
-       if (score < 20) level = '生活事件影响较小'
-       else if (score < 50) level = '生活事件影响中等'
-       else level = '生活事件影响显著'
-       
-       report = `【LES 生活事件评估】\n得分：${score}分\n评级：${level}\n\n【AI 深度分析与建议】\n生活中的变故（无论是积极的还是消极的）都会带来心理压力。测评显示近期生活事件对您的影响为${level}。请注意，即使是结婚、升职等喜事也需要心理适应期。建议您多与亲友沟通，寻求社会支持，平稳度过适应期。`
-
-    } else if (testId === 'epq') {
-        // General personality comment
-        report = `【EPQ 人格特质分析】\n\n【AI 深度分析与建议】\nEPQ问卷主要评估您的内外向(E)、神经质(N)等维度。由于这只是一个简版或单维度的分数汇总，无法精确生成完整的性格画像。但从您的答题倾向来看，您可能拥有独特的性格魅力。性格无好坏之分，了解自己的性格特质有助于您选择更适合的工作和生活方式，扬长避短。`
-    } else {
-        report = `基于您在${currentTest.value.name}中的表现（得分：${score}），AI分析认为您的状态${score < (currentTest.value.questions * 2) ? '良好且稳定' : '需要一定的关注和调整'}。每个人的心理状态都是动态变化的，此次测评仅反映当下的情况。建议您关注自己的内心需求，适当休息和放松。`
+    const requestData = {
+      testName: currentTest.value.name,
+      score: score,
+      answersJson: JSON.stringify(testDetails, null, 2)
     }
+
+    // Call the original non-streaming endpoint
+    const res = await request.post('/ai/assessment-report', requestData)
     
-    aiReport.value = report
-  }, 1500)
+    if (res) {
+      // Create chart first, wait for DOM to update with v-show=true
+      showChart.value = true
+      nextTick(() => {
+        renderChart(testDetails)
+      })
+
+      // Modify the markdown string to wrap sections in block divs
+      let processedRes = res
+        // Wrap everything between H3 and the next H3 (or end of string) in a custom div
+        .replace(/(###\s+.*?)(?=(###\s+|$))/gs, '<div class="report-block">\n\n$1\n\n</div>')
+      
+      aiReport.value = md.render(processedRes)
+    } else {
+      aiReport.value = '<div class="report-block">生成报告失败，请稍后重试。</div>'
+    }
+
+  } catch (error) {
+    console.error('AI Report generation failed:', error)
+    aiReport.value = '<div class="report-block">AI 报告服务暂时不可用，请联系管理员。</div>'
+  } finally {
+    loading.close()
+  }
+}
+
+const renderChart = (testDetails) => {
+  if (!chartRef.value) return
+  const myChart = echarts.init(chartRef.value)
+  
+  // Get top 6 highest scored items
+  const sortedDetails = [...testDetails].sort((a, b) => b.score - a.score).slice(0, 6)
+  
+  const option = {
+    title: {
+      text: '显著因子得分分析 (Top 6)',
+      left: 'center',
+      textStyle: { color: '#334155', fontSize: 16 }
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    grid: { left: '3%', right: '8%', bottom: '3%', containLabel: true },
+    xAxis: { 
+      type: 'value', 
+      max: (value) => value.max + 1,
+      splitLine: { show: true, lineStyle: { type: 'dashed' } }
+    },
+    yAxis: { 
+      type: 'category', 
+      data: sortedDetails.map(item => item.question.length > 10 ? item.question.substring(0, 10) + '...' : item.question).reverse(),
+      axisLabel: { interval: 0, width: 120, overflow: 'truncate' }
+    },
+    series: [
+      {
+        name: '分值',
+        type: 'bar',
+        data: sortedDetails.map(item => item.score).reverse(),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+            { offset: 0, color: '#38bdf8' },
+            { offset: 1, color: '#0284c7' }
+          ]),
+          borderRadius: [0, 4, 4, 0]
+        },
+        label: { 
+          show: true, 
+          position: 'right', 
+          color: '#0284c7', 
+          fontWeight: 'bold',
+          formatter: '{c} 分'
+        }
+      }
+    ]
+  }
+  myChart.setOption(option)
 }
 
 const resultTitle = computed(() => {
@@ -563,26 +579,36 @@ const closeTest = () => {
 }
 
 /* Test Dialog Styles */
+:deep(.test-dialog) {
+  display: flex;
+  flex-direction: column;
+  margin: 0 !important;
+  height: 100vh !important; /* Force full viewport height */
+  max-height: 100vh !important;
+}
+
 :deep(.test-dialog .el-dialog__header) {
   display: none;
 }
 
 :deep(.test-dialog .el-dialog__body) {
   padding: 0;
-  height: 100%;
+  flex: 1;
   background: #f5f7fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow-y: auto;
+  position: relative;
+  max-height: none !important; /* Remove max-height constraint */
 }
 
 .test-wrapper {
   width: 100%;
   max-width: 800px;
-  height: 100%;
+  min-height: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   padding: 40px 20px;
+  box-sizing: border-box;
 }
 
 .test-header {
@@ -739,22 +765,22 @@ const closeTest = () => {
 
 /* Result View */
 .result-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  background: #fff;
+  min-height: 100%;
+  background: #f5f7fa;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  z-index: 2000;
+  padding: 40px 20px;
+  box-sizing: border-box;
 }
 
 .result-card {
   text-align: center;
-  padding: 40px;
-  max-width: 500px;
+  padding: 40px 0;
+  max-width: 800px;
+  width: 100%;
+  background: transparent;
 }
 
 .score-circle {
@@ -787,29 +813,131 @@ const closeTest = () => {
   line-height: 1.6;
 }
 
-.ai-report {
-  margin-top: 30px;
-  background: #f0f9ff;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: left;
-  border: 1px solid #dbeafe;
+@import 'github-markdown-css/github-markdown-light.css';
+
+/* Fix el-dialog body scrolling */
+:deep(.el-dialog__body) {
+  max-height: 75vh;
+  overflow-y: auto;
+  padding: 20px 30px;
 }
 
-.ai-report h4 {
-  color: #0284c7;
+/* Formal Report Styles */
+.formal-report-wrapper {
+  margin-top: 40px;
+  background: transparent;
+  text-align: left;
+}
+
+.report-header {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.report-header h2 {
+  color: #0f172a;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.report-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 1.1rem;
+  justify-content: space-around;
+  color: #475569;
+  font-size: 1rem;
+  background: #f1f5f9;
+  padding: 15px 20px;
+  border-radius: 8px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 350px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 .report-content {
-  color: #334155;
-  line-height: 1.8;
-  font-size: 0.95rem;
+  background: transparent !important;
+}
+
+/* Report Blocks (generated via regex) */
+:deep(.report-block) {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 40px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.report-footer {
+  margin-top: 20px;
+  padding: 20px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.close-btn {
+  margin-top: 30px;
+}
+
+/* Customizing Markdown output */
+:deep(.markdown-body) {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: #1e293b; /* Darker text for better contrast */
+}
+
+:deep(.markdown-body h3) {
+  color: #0284c7; /* Deeper blue for section headers */
+  font-size: 1.4rem;
+  margin-top: 40px; /* Larger gap between sections */
+  margin-bottom: 25px;
+  border-bottom: 2px solid #bae6fd; /* Thicker border */
+  padding-bottom: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.markdown-body p) {
+  margin-bottom: 20px; /* More space between paragraphs */
   text-align: justify;
+  line-height: 1.9; /* More breathable line height */
+  color: #334155;
+  font-size: 1.05rem; /* Slightly larger text */
+}
+
+:deep(.markdown-body ul), :deep(.markdown-body ol) {
+  margin-bottom: 25px;
+  padding-left: 30px;
+  background: #f8fafc; /* Add subtle background to lists for grouping */
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-right: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #38bdf8; /* Left border accent */
+}
+
+:deep(.markdown-body li) {
+  margin-bottom: 12px;
+  line-height: 1.8;
+  color: #334155;
+  font-size: 1.05rem;
+}
+
+:deep(.markdown-body strong) {
+  color: #0f172a;
+  font-weight: 600;
 }
 
 .fade-in {

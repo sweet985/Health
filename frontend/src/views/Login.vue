@@ -10,9 +10,10 @@
       <div class="left-panel">
         <div class="brand-content">
           <div class="logo-circle">
-            <span class="logo-icon">🌿</span>
+            <img src="/logo.png" alt="logo" class="login-logo-img" @error="handleImageError" />
+            <span class="logo-icon" v-show="!hasLogo">🌿</span>
           </div>
-          <h1>Health Mind</h1>
+          <h1>心愈空间</h1>
           <p class="slogan">聆听心灵的声音，遇见更好的自己</p>
           <div class="illustration">
             <!-- Simple CSS illustration or just shapes -->
@@ -107,6 +108,12 @@ const registerForm = ref({ username: '', password: '' })
 const loading = ref(false)
 const userStore = useUserStore()
 const router = useRouter()
+const hasLogo = ref(true)
+
+const handleImageError = (e) => {
+  hasLogo.value = false
+  e.target.style.display = 'none'
+}
 
 const handleLogin = async () => {
   if (!loginForm.value.username || !loginForm.value.password) {
@@ -254,6 +261,13 @@ const handleRegister = async () => {
   margin: 0 auto 20px;
   backdrop-filter: blur(5px);
   border: 2px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+
+.login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .logo-icon {

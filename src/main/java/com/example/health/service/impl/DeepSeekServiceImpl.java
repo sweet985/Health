@@ -9,7 +9,11 @@ import com.example.health.service.DeepSeekService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -125,5 +129,138 @@ public class DeepSeekServiceImpl implements DeepSeekService {
         }
         
         return "抱歉，我没有听清楚，请再说一遍。";
+    }
+
+    @Override
+    public String generateAssessmentReport(String testName, int score, String answersJson) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("max_tokens", 1500);
+        
+        List<Map<String, String>> messages = new ArrayList<>();
+        
+        Map<String, String> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", "你是一位权威的临床心理学专家。用户刚刚完成了一份名为《" + testName + "》的心理测评。请根据用户的总得分和具体每道题的答题详情，出具一份正式、专业、结构化的【心理测评临床报告】。\n\n" +
+                "报告必须使用Markdown格式，排版要求像一份正式的医疗或心理诊断表单，语言要求客观、严谨、专业，避免过度口语化。\n\n" +
+                "请严格按照以下结构输出报告：\n" +
+                "### 📋 一、 测评概况\n" +
+                "（简述得分情况、反映出的整体心理状态等级，如正常、轻度、中度、重度，并给出专业界定。）\n\n" +
+                "### 🔍 二、 核心维度剖析\n" +
+                "（这是报告的核心。结合用户得分较高的具体题目，使用心理学专业术语进行深入分析。指出主要的压力源、认知偏差或突出的症状表现，并解释其背后的心理机制。）\n\n" +
+                "### ⚠️ 三、 风险评估\n" +
+                "（评估当前的心理状态对日常社会功能、躯体健康可能造成的影响，预警潜在风险。）\n\n" +
+                "### 💊 四、 临床干预与指导建议\n" +
+                "（提供3-5条结构化的干预方案，如：1. 认知干预... 2. 行为调整... 3. 专业支持...。建议要具体、可操作。）");
+        messages.add(systemMessage);
+
+        Map<String, String> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", "测评名称：" + testName + "\n总得分：" + score + "\n用户的具体答题详情（JSON格式，包含题目、选项和得分）：\n" + answersJson);
+        messages.add(userMessage);
+
+        requestBody.put("messages", messages);
+        requestBody.put("stream", false);
+
+        try {
+            HttpResponse response = HttpRequest.post(apiUrl)
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(JSONUtil.toJsonStr(requestBody))
+                    .timeout(90000)
+                    .execute();
+
+            if (response.isOk()) {
+                JSONObject jsonResponse = JSONUtil.parseObj(response.body());
+                JSONArray choices = jsonResponse.getJSONArray("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    JSONObject choice = choices.getJSONObject(0);
+                    JSONObject messageObj = choice.getJSONObject("message");
+                    return messageObj.getStr("content");
+                }
+            } else {
+                return "抱歉，AI深度分析报告生成失败，请稍后再试。（API Error: " + response.getStatus() + "）";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "抱歉，连接AI服务出现了问题，无法生成分析报告，请稍后再试。";
+        }
+        
+        return "抱歉，AI未能生成报告。";
+    }
+
+    @Override
+    public void generateAssessmentReportStream(String testName, int score, String answersJson, SseEmitter emitter) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("max_tokens", 1500); // 允许较长的报告
+        requestBody.put("stream", true); // 开启流式输出
+        
+        List<Map<String, String>> messages = new ArrayList<>();
+        
+        Map<String, String> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", "你是一位权威的临床心理学专家。用户刚刚完成了一份名为《" + testName + "》的心理测评。请根据用户的总得分和具体每道题的答题详情，出具一份正式、专业、结构化的【心理测评临床报告】。\n\n" +
+                "报告必须使用Markdown格式，排版要求像一份正式的医疗或心理诊断表单，语言要求客观、严谨、专业，避免过度口语化。\n\n" +
+                "请严格按照以下结构输出报告：\n" +
+                "### 📋 一、 测评概况\n" +
+                "（简述得分情况、反映出的整体心理状态等级，如正常、轻度、中度、重度，并给出专业界定。）\n\n" +
+                "### 🔍 二、 核心维度剖析\n" +
+                "（这是报告的核心。结合用户得分较高的具体题目，使用心理学专业术语进行深入分析。指出主要的压力源、认知偏差或突出的症状表现，并解释其背后的心理机制。）\n\n" +
+                "### ⚠️ 三、 风险评估\n" +
+                "（评估当前的心理状态对日常社会功能、躯体健康可能造成的影响，预警潜在风险。）\n\n" +
+                "### 💊 四、 临床干预与指导建议\n" +
+                "（提供3-5条结构化的干预方案，如：1. 认知干预... 2. 行为调整... 3. 专业支持...。建议要具体、可操作。）");
+        messages.add(systemMessage);
+
+        Map<String, String> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", "测评名称：" + testName + "\n总得分：" + score + "\n用户的具体答题详情（JSON格式，包含题目、选项和得分）：\n" + answersJson);
+        messages.add(userMessage);
+
+        requestBody.put("messages", messages);
+
+        try {
+            HttpResponse response = HttpRequest.post(apiUrl)
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(JSONUtil.toJsonStr(requestBody))
+                    .timeout(90000)
+                    .executeAsync(); // 异步执行以获取流
+
+            if (response.isOk()) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.bodyStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("data: ") && !line.equals("data: [DONE]")) {
+                            String data = line.substring(6);
+                            JSONObject jsonResponse = JSONUtil.parseObj(data);
+                            JSONArray choices = jsonResponse.getJSONArray("choices");
+                            if (choices != null && !choices.isEmpty()) {
+                                JSONObject choice = choices.getJSONObject(0);
+                                JSONObject delta = choice.getJSONObject("delta");
+                                if (delta != null && delta.containsKey("content")) {
+                                    String content = delta.getStr("content");
+                                    // 发送片段到客户端
+                                    emitter.send(SseEmitter.event().data(content));
+                                }
+                            }
+                        }
+                    }
+                    emitter.complete();
+                }
+            } else {
+                emitter.send(SseEmitter.event().name("error").data("API Error: " + response.getStatus()));
+                emitter.complete();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                emitter.send(SseEmitter.event().name("error").data("连接AI服务出现异常"));
+                emitter.complete();
+            } catch (Exception ex) {
+                emitter.completeWithError(ex);
+            }
+        }
     }
 }

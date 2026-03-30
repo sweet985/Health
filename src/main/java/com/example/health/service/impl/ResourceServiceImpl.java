@@ -23,4 +23,16 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource> i
         Collections.shuffle(all);
         return all.subList(0, Math.min(limit, all.size()));
     }
+
+    @Override
+    public List<Resource> searchResources(Integer type, String keyword) {
+        QueryWrapper<Resource> queryWrapper = new QueryWrapper<>();
+        if (type != null) {
+            queryWrapper.eq("type", type);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.and(wrapper -> wrapper.like("title", keyword).or().like("content", keyword));
+        }
+        return list(queryWrapper);
+    }
 }

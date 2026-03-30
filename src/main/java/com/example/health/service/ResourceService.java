@@ -7,4 +7,5 @@ import java.util.List;
 public interface ResourceService extends IService<Resource> {
     List<Resource> getByType(Integer type);
     List<Resource> getRandomByType(Integer type, int limit);
+    List<Resource> searchResources(Integer type, String keyword);
 }

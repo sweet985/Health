@@ -9,68 +9,73 @@
     </div>
     
     <div class="features-container">
-      <el-row :gutter="30">
-        <el-col :span="6">
+      <div class="carousel-wrapper">
+        <el-button class="carousel-btn prev-btn" @click="scrollPrev" circle>
+          <el-icon><ArrowLeft /></el-icon>
+        </el-button>
+        
+        <div class="feature-track" ref="trackRef">
           <div class="feature-card treehole-card" @click="$router.push('/treehole')">
-            <div class="card-icon">
-              <el-icon><ChatDotRound /></el-icon>
-            </div>
+            <div class="card-icon"><el-icon><ChatDotRound /></el-icon></div>
             <h3>匿名树洞</h3>
             <p>戴上面具，卸下防备，在这里你可以诉说任何秘密。</p>
             <div class="card-bg-shape"></div>
           </div>
-        </el-col>
-        
-        <el-col :span="6">
+          
           <div class="feature-card treasure-card" @click="$router.push('/treasure')">
-            <div class="card-icon">
-              <el-icon><Star /></el-icon>
-            </div>
+            <div class="card-icon"><el-icon><Star /></el-icon></div>
             <h3>治愈宝库</h3>
             <p>温暖的文字、图片与旋律，是抚慰心灵的良药。</p>
             <div class="card-bg-shape"></div>
           </div>
-        </el-col>
-        
-        <el-col :span="6">
+          
           <div class="feature-card community-card" @click="$router.push('/community')">
-            <div class="card-icon">
-              <el-icon><User /></el-icon>
-            </div>
+            <div class="card-icon"><el-icon><User /></el-icon></div>
             <h3>共鸣社区</h3>
             <p>分享生活点滴，在茫茫人海中找到懂你的那个TA。</p>
             <div class="card-bg-shape"></div>
           </div>
-        </el-col>
-        
-        <el-col :span="6">
+          
           <div class="feature-card assessment-card" @click="$router.push('/assessment')">
-            <div class="card-icon">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
+            <div class="card-icon"><el-icon><DataAnalysis /></el-icon></div>
             <h3>心理测评</h3>
             <p>专业量表，科学探索内心，发现更好的自己。</p>
             <div class="card-bg-shape"></div>
           </div>
-        </el-col>
-        
-        <el-col :span="6">
+          
           <div class="feature-card contact-card" @click="$router.push('/contact')">
-            <div class="card-icon">
-              <el-icon><PhoneFilled /></el-icon>
-            </div>
+            <div class="card-icon"><el-icon><PhoneFilled /></el-icon></div>
             <h3>联系我们</h3>
             <p>随时倾听您的声音，为您提供最贴心的支持。</p>
             <div class="card-bg-shape"></div>
           </div>
-        </el-col>
-      </el-row>
+        </div>
+
+        <el-button class="carousel-btn next-btn" @click="scrollNext" circle>
+          <el-icon><ArrowRight /></el-icon>
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled } from '@element-plus/icons-vue'
+import { ref } from 'vue'
+import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+
+const trackRef = ref(null)
+
+const scrollPrev = () => {
+  if (trackRef.value) {
+    trackRef.value.scrollBy({ left: -340, behavior: 'smooth' })
+  }
+}
+
+const scrollNext = () => {
+  if (trackRef.value) {
+    trackRef.value.scrollBy({ left: 340, behavior: 'smooth' })
+  }
+}
 </script>
 
 <style scoped>
@@ -119,10 +124,34 @@ import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled } from '@element-pl
   z-index: 3;
 }
 
+.carousel-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 20px 0;
+  padding: 20px 0;
+}
+
+.feature-track {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 20px 10px;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.feature-track::-webkit-scrollbar {
+  display: none;
+}
+
 .feature-card {
+  flex: 0 0 310px; /* Fixed width for each card */
   background: #fff;
   border-radius: 20px;
-  padding: 40px 30px;
+  padding: 30px 20px;
   text-align: center;
   height: 280px;
   cursor: pointer;
@@ -134,11 +163,38 @@ import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled } from '@element-pl
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .feature-card:hover {
-  transform: translateY(-15px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  transform: scale(1.08);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 10;
+}
+
+.carousel-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+.carousel-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+  background-color: #ecf5ff;
+}
+
+.prev-btn {
+  margin-right: -15px;
+}
+
+.next-btn {
+  margin-left: -15px;
 }
 
 .card-icon {
