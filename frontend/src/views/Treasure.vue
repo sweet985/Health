@@ -7,7 +7,7 @@
       <div class="search-box">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索治愈内容（如：音乐、金句...）"
+          :placeholder="searchPlaceholder"
           class="treasure-search"
           clearable
           @keyup.enter="handleSearch"
@@ -34,7 +34,20 @@
               <el-icon class="quote-mark left"><ChatLineSquare /></el-icon>
               <h3>{{ item.content }}</h3>
               <el-icon class="quote-mark right"><ChatLineSquare /></el-icon>
-              <div class="quote-author" v-if="item.title">—— {{ item.title }}</div>
+              <div class="quote-footer">
+                <div class="quote-author" v-if="item.title">—— {{ item.title }}</div>
+                <el-button 
+                  type="primary" 
+                  link 
+                  class="favorite-btn"
+                  @click="toggleFavorite(item, $event)"
+                >
+                  <el-icon size="20">
+                    <StarFilled v-if="isFavorited(item.id)" color="#f5a623" />
+                    <Star v-else />
+                  </el-icon>
+                </el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -55,17 +68,33 @@
           <div v-for="item in list" :key="item.id" class="image-item fade-in-up">
             <el-image 
               :src="item.content" 
-              :preview-src-list="[item.content]"
-              fit="cover" 
+              :alt="item.title"
               class="healing-image"
-              loading="lazy"
+              lazy
+              :preview-src-list="[item.content.replace('w=400&q=60', 'w=1200&q=90')]"
+              :initial-index="0"
+              fit="cover"
+              hide-on-click-modal
             >
               <template #placeholder>
-                <div class="image-slot">Loading...</div>
+                <div class="image-slot">
+                  <el-icon class="is-loading"><Refresh /></el-icon> 加载中...
+                </div>
+              </template>
+              <template #error>
+                <div class="image-slot">
+                  加载失败
+                </div>
               </template>
             </el-image>
             <div class="image-overlay">
               <span class="image-title">{{ item.title }}</span>
+              <el-button type="primary" link class="favorite-btn" @click="toggleFavorite(item, $event)">
+                <el-icon size="20">
+                  <StarFilled v-if="isFavorited(item.id)" color="#f5a623" />
+                  <Star v-else />
+                </el-icon>
+              </el-button>
             </div>
           </div>
         </div>
@@ -88,6 +117,12 @@
                 <span class="music-desc">治愈心灵的旋律</span>
               </div>
               <div class="music-action">
+                <el-button type="primary" link class="favorite-btn" @click="toggleFavorite(item, $event)">
+                  <el-icon size="20">
+                    <StarFilled v-if="isFavorited(item.id)" color="#f5a623" />
+                    <Star v-else />
+                  </el-icon>
+                </el-button>
                 <el-button circle type="primary" plain @click.stop="playMusic(item)">
                   <el-icon><VideoPause v-if="isCurrentMusic(item) && musicStore.isPlaying" /><VideoPlay v-else /></el-icon>
                 </el-button>
@@ -109,6 +144,12 @@
              </div>
              <div class="video-info">
                <span>{{ item.title }}</span>
+               <el-button type="primary" link class="favorite-btn" @click="toggleFavorite(item, $event)">
+                 <el-icon size="20">
+                   <StarFilled v-if="isFavorited(item.id)" color="#f5a623" />
+                   <Star v-else />
+                 </el-icon>
+               </el-button>
              </div>
            </div>
         </div>
@@ -120,10 +161,18 @@
       <el-tab-pane label="小游戏" name="5">
         <div class="game-list" v-if="activeName === '5' && list.length > 0">
            <div v-for="item in list" :key="item.id" class="game-card fade-in-up" @click="openGame(item.content)">
-             <div class="game-icon">🎮</div>
+             <div class="game-icon">
+               {{ item.content === 'breathe' ? '🧘' : (item.content === 'bubble' ? '🫧' : (item.content === 'flower' ? '🪴' : '🎮')) }}
+             </div>
              <div class="game-content">
                <h3>{{ item.title }}</h3>
-               <p>点击开始游戏</p>
+               <p>
+                 {{ 
+                   item.content === 'breathe' ? '跟随节奏，放松身心' : 
+                   (item.content === 'bubble' ? '戳破泡泡，释放压力' : 
+                   (item.content === 'flower' ? '耐心浇水，陪伴成长' : '点击开始游戏')) 
+                 }}
+               </p>
              </div>
              <el-button type="primary" round size="small">PLAY</el-button>
            </div>
@@ -131,22 +180,106 @@
         <el-empty v-else-if="activeName === '5' && !loading" description="暂无数据" />
         <div v-else-if="activeName === '5' && loading" class="loading-container">加载中...</div>
       </el-tab-pane>
+
+      <!-- 科普文章 -->
+      <el-tab-pane label="科普文章" name="6">
+        <div class="article-list" v-if="activeName === '6' && list.length > 0">
+           <div v-for="item in list" :key="item.id" class="article-card fade-in-up" @click="openArticle(item)">
+             <div class="article-icon"><el-icon><Reading /></el-icon></div>
+             <div class="article-content">
+               <h3>{{ item.title }}</h3>
+               <p class="article-desc">{{ item.content }}</p>
+             </div>
+             <div class="article-action">
+               <el-button type="primary" link class="favorite-btn" @click="toggleFavorite(item, $event)" style="margin-right: 15px;">
+                 <el-icon size="20">
+                   <StarFilled v-if="isFavorited(item.id)" color="#f5a623" />
+                   <Star v-else />
+                 </el-icon>
+               </el-button>
+               <el-button type="primary" link>阅读全文</el-button>
+             </div>
+           </div>
+        </div>
+        <el-empty v-else-if="activeName === '6' && !loading" description="暂无数据" />
+        <div v-else-if="activeName === '6' && loading" class="loading-container">加载中...</div>
+      </el-tab-pane>
     </el-tabs>
+
+    <!-- 文章详情弹窗 -->
+    <el-dialog 
+      v-model="articleDialogVisible" 
+      width="700px" 
+      class="article-dialog"
+      :show-close="false"
+      align-center
+    >
+      <div class="book-container">
+        <div class="book-header">
+          <h2 class="book-title">{{ currentArticle.title }}</h2>
+          <div class="book-meta">
+            <span>治愈宝库 · 心理科普</span>
+            <el-button type="primary" link class="close-book-btn" @click="articleDialogVisible = false">
+              合上书本
+            </el-button>
+          </div>
+        </div>
+        <div class="book-content">
+          <p v-for="(paragraph, index) in currentArticle.content?.split('\n')" :key="index" v-show="paragraph.trim() !== ''">
+            {{ paragraph }}
+          </p>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 游戏弹窗 -->
+    <el-dialog 
+      v-model="gameDialogVisible" 
+      width="600px" 
+      destroy-on-close
+      align-center
+      class="game-dialog"
+    >
+      <component :is="currentGameComponent" />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, shallowRef, onMounted, computed, watch } from 'vue'
 import request from '../utils/request'
-import { ChatLineSquare, Headset, Refresh, VideoPlay, VideoPause, Search } from '@element-plus/icons-vue'
+import { ChatLineSquare, Headset, Refresh, VideoPlay, VideoPause, Search, Reading, Star, StarFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMusicStore } from '../stores/music'
+import { useRoute } from 'vue-router'
+import BreatheGame from '../components/BreatheGame.vue'
+import BubbleGame from '../components/BubbleGame.vue'
+import FlowerGame from '../components/FlowerGame.vue'
 
+const route = useRoute()
 const activeName = ref('1')
 const list = ref([])
 const loading = ref(false)
 const searchKeyword = ref('')
 let currentRequestId = 0
+
+const searchPlaceholder = computed(() => {
+  const map = {
+    '1': '搜索金句（如：人生、坚持...）',
+    '2': '搜索图片（如：风景、猫咪...）',
+    '3': '搜索音乐（如：白噪音、爵士...）',
+    '4': '搜索视频（如：风景、放松...）',
+    '5': '搜索游戏（如：2048、贪吃蛇...）',
+    '6': '搜索文章（如：冥想、自尊...）'
+  }
+  return map[activeName.value] || '搜索治愈内容...'
+})
+
+const articleDialogVisible = ref(false)
+const currentArticle = ref({})
+const userFavoriteIds = ref([])
+const gameDialogVisible = ref(false)
+const currentGameComponent = shallowRef(null)
 
 const musicStore = useMusicStore()
 
@@ -200,12 +333,78 @@ const handleClick = (tab) => {
   load(tab.props.name)
 }
 
-const openGame = (url) => {
-  window.open(url, '_blank')
+const openGame = (content) => {
+  if (content === 'breathe') {
+    currentGameComponent.value = BreatheGame
+  } else if (content === 'bubble') {
+    currentGameComponent.value = BubbleGame
+  } else if (content === 'flower') {
+    currentGameComponent.value = FlowerGame
+  } else {
+    // Fallback to external url if it's still an old record
+    window.open(content, '_blank')
+    return
+  }
+  gameDialogVisible.value = true
+}
+
+const openArticle = (item) => {
+  currentArticle.value = item
+  articleDialogVisible.value = true
+}
+
+const fetchFavorites = async () => {
+  try {
+    const res = await request.get('/resource/favorite/ids')
+    userFavoriteIds.value = res || []
+  } catch (e) {
+    console.error('Failed to load favorites', e)
+  }
+}
+
+const toggleFavorite = async (item, event) => {
+  if (event) event.stopPropagation()
+  try {
+    const res = await request.post(`/resource/favorite/toggle/${item.id}`)
+    if (res === true) {
+      userFavoriteIds.value.push(item.id)
+      ElMessage.success('已收藏')
+    } else {
+      userFavoriteIds.value = userFavoriteIds.value.filter(id => id !== item.id)
+      ElMessage.success('已取消收藏')
+    }
+  } catch (e) {
+    ElMessage.error('操作失败，请重试')
+  }
+}
+
+const isFavorited = (id) => {
+  return userFavoriteIds.value.includes(id)
 }
 
 onMounted(() => {
-  load()
+  // Check if there are query parameters from router (e.g. from Profile favorite click)
+  if (route.query.type) {
+    activeName.value = route.query.type.toString()
+  }
+  if (route.query.keyword) {
+    searchKeyword.value = route.query.keyword
+    load(activeName.value, true)
+  } else {
+    load()
+  }
+  fetchFavorites()
+})
+
+// Watch for route query changes if user is already on Treasure page
+watch(() => route.query, (newQuery) => {
+  if (newQuery.type) {
+    activeName.value = newQuery.type.toString()
+  }
+  if (newQuery.keyword) {
+    searchKeyword.value = newQuery.keyword
+    load(activeName.value, true)
+  }
 })
 </script>
 
@@ -381,6 +580,20 @@ onMounted(() => {
   font-size: 1.1rem;
   font-weight: 500;
 }
+.image-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background: #f5f7fa;
+  color: #909399;
+  font-size: 14px;
+}
+.image-slot .el-icon {
+  margin-right: 5px;
+}
 
 /* Music Styles */
 .music-list {
@@ -520,6 +733,153 @@ onMounted(() => {
 .game-content p {
   color: #999;
   margin-bottom: 20px;
+}
+
+/* Article Styles */
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.article-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 25px;
+  display: flex;
+  align-items: flex-start;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.article-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+.article-icon {
+  font-size: 32px;
+  color: #409eff;
+  background: #ecf5ff;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+.article-content {
+  flex: 1;
+  overflow: hidden;
+}
+.article-content h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.15rem;
+}
+.article-desc {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.article-action {
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* Article Dialog Styles - Book Theme */
+:deep(.article-dialog) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 12px;
+}
+:deep(.article-dialog .el-dialog__header) {
+  display: none;
+}
+:deep(.article-dialog .el-dialog__body) {
+  padding: 0;
+  background: transparent;
+}
+
+.book-container {
+  background-color: #fcf9f2; /* Warm paper color */
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.05) 0%, transparent 5%, transparent 95%, rgba(0,0,0,0.05) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, transparent 2%, transparent 98%, rgba(0,0,0,0.02) 100%);
+  border-radius: 8px 16px 16px 8px;
+  box-shadow: 
+    -5px 0 15px rgba(0,0,0,0.05),
+    inset 5px 0 10px rgba(0,0,0,0.02),
+    0 20px 40px rgba(0,0,0,0.1);
+  padding: 50px 60px;
+  position: relative;
+  min-height: 500px;
+  border-left: 12px solid #e0c8a0; /* Book spine */
+}
+
+.book-container::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0,0,0,0.2);
+}
+
+.book-header {
+  border-bottom: 1px solid #e8decb;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.book-title {
+  font-family: "Songti SC", "SimSun", serif;
+  font-size: 2.2rem;
+  color: #2c1e16;
+  text-align: center;
+  margin: 0 0 15px 0;
+  letter-spacing: 2px;
+}
+
+.book-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #8c7b66;
+  font-size: 0.9rem;
+  font-family: "KaiTi", serif;
+}
+
+.close-book-btn {
+  color: #a88d6b;
+}
+.close-book-btn:hover {
+  color: #c4a984;
+}
+
+.book-content {
+  font-family: "Songti SC", "SimSun", serif;
+  font-size: 1.15rem;
+  line-height: 2.2;
+  color: #3d2b1f;
+  text-align: justify;
+}
+
+.book-content p {
+  margin-bottom: 20px;
+  text-indent: 2.3em;
+}
+
+.book-content p:first-letter {
+  font-size: 1.2em;
 }
 
 /* Animations */

@@ -386,12 +386,26 @@ const generateAIReport = async (testId, score, answersArray) => {
         renderChart(testDetails)
       })
 
-      // Modify the markdown string to wrap sections in block divs
-      let processedRes = res
-        // Wrap everything between H3 and the next H3 (or end of string) in a custom div
-        .replace(/(###\s+.*?)(?=(###\s+|$))/gs, '<div class="report-block">\n\n$1\n\n</div>')
+      // Render Markdown to HTML FIRST, THEN wrap the generated HTML in blocks.
+      // This prevents markdown-it from escaping the div tags.
+      let renderedHtml = md.render(res)
       
-      aiReport.value = md.render(processedRes)
+      // Wrap everything between <h3> tags in a report-block div
+      let processedHtml = renderedHtml.replace(/(<h3.*?>.*?<\/h3>[\s\S]*?)(?=<h3|$)/gi, '<div class="report-block">\n$1\n</div>')
+      
+      aiReport.value = processedHtml
+
+      // Save assessment record to backend
+      try {
+        await request.post('/assessment/record/save', {
+          score: score, // 使用传入的 score，而不是未定义的 totalScore.value
+          level: resultTitle.value, // 使用计算属性的值作为 level
+          reportContent: res // Save original markdown
+        })
+      } catch (saveErr) {
+        console.error('Failed to save assessment record', saveErr)
+      }
+      
     } else {
       aiReport.value = '<div class="report-block">生成报告失败，请稍后重试。</div>'
     }
@@ -419,7 +433,14 @@ const renderChart = (testDetails) => {
     },
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow' }
+      axisPointer: { type: 'shadow' },
+      formatter: function (params) {
+        // Show full question text in tooltip
+        const dataIndex = params[0].dataIndex;
+        const fullQuestion = sortedDetails[sortedDetails.length - 1 - dataIndex].question;
+        const score = params[0].value;
+        return `${fullQuestion}<br/>得分: <strong>${score}</strong> 分`;
+      }
     },
     grid: { left: '3%', right: '8%', bottom: '3%', containLabel: true },
     xAxis: { 
@@ -429,8 +450,12 @@ const renderChart = (testDetails) => {
     },
     yAxis: { 
       type: 'category', 
-      data: sortedDetails.map(item => item.question.length > 10 ? item.question.substring(0, 10) + '...' : item.question).reverse(),
-      axisLabel: { interval: 0, width: 120, overflow: 'truncate' }
+      data: sortedDetails.map(item => item.question.length > 15 ? item.question.substring(0, 15) + '...' : item.question).reverse(),
+      axisLabel: { 
+        interval: 0, 
+        width: 180, // Increased width to show more text
+        overflow: 'truncate' 
+      }
     },
     series: [
       {

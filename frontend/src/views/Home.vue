@@ -43,7 +43,7 @@
             <div class="card-bg-shape"></div>
           </div>
           
-          <div class="feature-card contact-card" @click="$router.push('/contact')">
+          <div class="feature-card contact-card" id="contact-section" @click="$router.push('/contact')">
             <div class="card-icon"><el-icon><PhoneFilled /></el-icon></div>
             <h3>联系我们</h3>
             <p>随时倾听您的声音，为您提供最贴心的支持。</p>

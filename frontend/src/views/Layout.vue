@@ -16,6 +16,7 @@
         <el-menu-item index="/chat">消息中心</el-menu-item>
         <el-menu-item index="/ai-chat">心理助手</el-menu-item>
         <el-menu-item index="/profile">个人中心</el-menu-item>
+        <el-menu-item index="/contact">联系我们</el-menu-item>
       </el-menu>
       <div class="user-actions">
         <span>{{ userStore.userInfo.username }}</span>

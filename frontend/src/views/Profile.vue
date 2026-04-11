@@ -66,43 +66,119 @@
                 <el-tab-pane label="全部" name="all"></el-tab-pane>
                 <el-tab-pane label="树洞" name="treehole"></el-tab-pane>
                 <el-tab-pane label="社区" name="community"></el-tab-pane>
+                <el-tab-pane label="我的收藏" name="favorites"></el-tab-pane>
+                <el-tab-pane label="测评记录" name="assessment"></el-tab-pane>
               </el-tabs>
             </div>
           </template>
 
           <div class="posts-list" v-loading="loading">
-            <el-empty v-if="filteredPosts.length === 0" description="暂无发布内容" :image-size="150" />
-            
-            <div v-else v-for="post in filteredPosts" :key="post.id" class="post-item animate-in">
-              <div class="post-main" @click="goToPost(post)">
-                <div class="post-top">
-                  <el-tag size="small" :type="post.type === 1 ? 'info' : 'success'" effect="light" round>
-                    {{ post.type === 1 ? '匿名树洞' : '共鸣社区' }}
-                  </el-tag>
-                  <span class="post-time">{{ formatTime(post.createTime) }}</span>
-                </div>
-                <h4 class="post-title" v-if="post.title">{{ post.title }}</h4>
-                <p class="post-excerpt">{{ post.content }}</p>
+            <template v-if="activeTab === 'favorites'">
+              <div class="favorite-filters" style="margin-bottom: 20px;">
+                <el-radio-group v-model="favoriteTab" size="small">
+                  <el-radio-button label="all">全部</el-radio-button>
+                  <el-radio-button :label="1">治愈金句</el-radio-button>
+                  <el-radio-button :label="2">图片</el-radio-button>
+                  <el-radio-button :label="3">音乐</el-radio-button>
+                  <el-radio-button :label="4">视频</el-radio-button>
+                  <el-radio-button :label="6">科普文章</el-radio-button>
+                </el-radio-group>
               </div>
+              <el-empty v-if="filteredPosts.length === 0" description="暂无收藏内容" :image-size="150" />
               
-              <div class="post-footer">
-                <div class="post-stats">
-                  <span class="stat"><el-icon><Star /></el-icon> {{ post.likeCount || 0 }}</span>
-                  <span class="stat"><el-icon><ChatDotRound /></el-icon> {{ post.commentCount || 0 }}</span>
+              <div v-else v-for="post in filteredPosts" :key="post.id" class="post-item animate-in">
+                <div class="post-main" @click="goToPost(post)">
+                  <div class="post-top">
+                    <el-tag size="small" :type="getPostTagType(post)" effect="light" round>
+                      {{ getPostTagLabel(post) }}
+                    </el-tag>
+                    <span class="post-time" v-if="post.createTime">{{ formatTime(post.createTime) }}</span>
+                  </div>
+                  <h4 class="post-title" v-if="post.title">{{ post.title }}</h4>
+                  <p class="post-excerpt">{{ post.content }}</p>
                 </div>
-                <div class="post-actions">
-                  <el-tooltip content="删除" placement="top">
-                    <el-button type="danger" circle size="small" plain @click.stop="deleteMyPost(post.id)">
-                      <el-icon><Delete /></el-icon>
-                    </el-button>
-                  </el-tooltip>
+                
+                <div class="post-footer">
+                  <div class="post-actions">
+                    <el-tooltip content="取消收藏" placement="top">
+                      <el-button type="warning" circle size="small" plain @click.stop="removeFavorite(post.id)">
+                        <el-icon><StarFilled /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
+
+            <template v-else-if="activeTab !== 'assessment'">
+              <el-empty v-if="filteredPosts.length === 0" description="暂无内容" :image-size="150" />
+              
+              <div v-else v-for="post in filteredPosts" :key="post.id" class="post-item animate-in">
+                <div class="post-main" @click="goToPost(post)">
+                  <div class="post-top">
+                    <el-tag size="small" :type="getPostTagType(post)" effect="light" round>
+                      {{ getPostTagLabel(post) }}
+                    </el-tag>
+                    <span class="post-time" v-if="post.createTime">{{ formatTime(post.createTime) }}</span>
+                  </div>
+                  <h4 class="post-title" v-if="post.title">{{ post.title }}</h4>
+                  <p class="post-excerpt">{{ post.content }}</p>
+                </div>
+                
+                <div class="post-footer">
+                  <div class="post-stats">
+                    <span class="stat"><el-icon><Star /></el-icon> {{ post.likeCount || 0 }}</span>
+                    <span class="stat"><el-icon><ChatDotRound /></el-icon> {{ post.commentCount || 0 }}</span>
+                  </div>
+                  <div class="post-actions">
+                    <el-tooltip content="删除" placement="top">
+                      <el-button type="danger" circle size="small" plain @click.stop="deleteMyPost(post.id)">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- 测评记录列表 -->
+            <template v-else>
+              <el-empty v-if="myAssessments.length === 0" description="暂无测评记录" :image-size="150" />
+              <div v-else v-for="record in myAssessments" :key="record.id" class="post-item animate-in" @click="viewReport(record)">
+                <div class="post-main">
+                  <div class="post-top">
+                    <el-tag size="small" type="primary" effect="light" round>SCL-90</el-tag>
+                    <span class="post-time">{{ formatTime(record.createTime) }}</span>
+                  </div>
+                  <h4 class="post-title">综合心理健康测评</h4>
+                  <div class="assessment-meta">
+                    <span class="score-badge">总分: {{ record.score }}</span>
+                    <span class="level-badge" :class="record.level === '正常' ? 'normal' : 'warning'">结论: {{ record.level }}</span>
+                  </div>
+                  <p class="post-excerpt" style="margin-top: 10px; color: #409eff; font-size: 0.9rem;">点击查看详细AI诊断报告</p>
+                </div>
+                <div class="post-footer">
+                  <div class="post-actions" style="margin-left: auto;">
+                    <el-tooltip content="删除记录" placement="top">
+                      <el-button type="danger" circle size="small" plain @click.stop="deleteAssessment(record.id)">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
         </el-card>
       </div>
     </div>
+
+    <!-- 报告弹窗 -->
+    <el-dialog v-model="reportDialogVisible" title="心理测评报告" width="800px" class="report-dialog">
+      <div class="report-content-scroll">
+        <div class="markdown-body" v-html="currentReportHtml"></div>
+      </div>
+    </el-dialog>
 
     <!-- Edit Profile Dialog -->
     <el-dialog v-model="dialogVisible" title="编辑个人资料" width="500px" center destroy-on-close class="custom-dialog">
@@ -159,12 +235,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Edit, Camera, Delete, Star, ChatDotRound } from '@element-plus/icons-vue'
+import { Edit, Camera, Delete, Star, StarFilled, ChatDotRound } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -173,6 +249,7 @@ const dialogVisible = ref(false)
 const avatarDialogVisible = ref(false)
 const loading = ref(false)
 const activeTab = ref('all')
+const favoriteTab = ref('all')
 
 const form = ref({ 
   username: '',
@@ -182,7 +259,12 @@ const form = ref({
 })
 const password = ref('')
 const myPosts = ref([])
+const myFavorites = ref([])
+const myAssessments = ref([])
 const moodScore = ref(100) // Mock score, ideally from userStore
+
+const reportDialogVisible = ref(false)
+const currentReportHtml = ref('')
 
 const mbtiOptions = [
   'ESTJ', 'ISTJ', 'ENTJ', 'INTJ', 
@@ -202,25 +284,121 @@ const totalLikes = computed(() => {
 })
 
 const filteredPosts = computed(() => {
+  if (activeTab.value === 'favorites') {
+    let filtered = myFavorites.value
+    if (favoriteTab.value !== 'all') {
+      filtered = filtered.filter(res => res.type === favoriteTab.value)
+    }
+    return filtered.map(res => ({
+      id: res.id,
+      title: res.title,
+      content: res.content,
+      resourceType: res.type,
+      isFavorite: true
+    }))
+  }
   if (activeTab.value === 'all') return myPosts.value
   const type = activeTab.value === 'treehole' ? 1 : 2
   return myPosts.value.filter(post => post.type === type)
 })
 
+const getPostTagType = (post) => {
+  if (post.isFavorite) {
+    const map = { 1: 'warning', 2: 'success', 3: 'info', 4: 'danger', 6: '' }
+    return map[post.resourceType] || 'info'
+  }
+  return post.type === 1 ? 'info' : 'success'
+}
+
+const getPostTagLabel = (post) => {
+  if (post.isFavorite) {
+    const map = { 1: '治愈金句', 2: '治愈图片', 3: '治愈音乐', 4: '治愈视频', 6: '科普文章' }
+    return map[post.resourceType] || '收藏'
+  }
+  return post.type === 1 ? '匿名树洞' : '共鸣社区'
+}
+
 const loadMyPosts = async () => {
   loading.value = true
   try {
-    const res = await request.get('/post/my') // Assuming this API exists and returns all posts
-    // If the API only supports paging, we might need to handle that.
-    // For now assuming it returns a list or Page object.
-    // Based on previous code it returns Page object.
-    // Let's assume we want to show all or first page.
-    // Previous code: res.records
+    const res = await request.get('/post/my')
     myPosts.value = res.records || []
   } catch (e) {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+const loadMyFavorites = async () => {
+  loading.value = true
+  try {
+    const res = await request.get('/resource/favorite/list')
+    myFavorites.value = res || []
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const filterPosts = () => {
+  if (activeTab.value === 'favorites') {
+    loadMyFavorites()
+  } else if (activeTab.value === 'assessment') {
+    loadMyAssessments()
+  } else {
+    // For local filtering of posts, we don't necessarily need to reload from server every time,
+    // but doing so ensures fresh data. If it's already loaded, it just filters via computed property.
+    if (myPosts.value.length === 0) {
+      loadMyPosts()
+    }
+  }
+}
+
+const loadMyAssessments = async () => {
+  loading.value = true
+  try {
+    const res = await request.get('/assessment/record/my')
+    myAssessments.value = res || []
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const deleteAssessment = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条测评记录吗？', '提示', {
+      type: 'warning'
+    })
+    await request.delete(`/assessment/record/${id}`)
+    ElMessage.success('删除成功')
+    loadMyAssessments()
+  } catch (e) {
+    if (e !== 'cancel') {
+      console.error(e)
+    }
+  }
+}
+
+// Watch for activeTab changes to ensure data is loaded when directly clicking the tab
+watch(activeTab, (newVal) => {
+  if (newVal === 'favorites' && myFavorites.value.length === 0) {
+    loadMyFavorites()
+  } else if (newVal === 'assessment' && myAssessments.value.length === 0) {
+    loadMyAssessments()
+  }
+})
+
+const removeFavorite = async (id) => {
+  try {
+    await request.post(`/resource/favorite/toggle/${id}`)
+    ElMessage.success('已取消收藏')
+    loadMyFavorites()
+  } catch (e) {
+    ElMessage.error('操作失败')
   }
 }
 
@@ -301,10 +479,37 @@ const deleteMyPost = (id) => {
   }).catch(() => {})
 }
 
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({ breaks: true })
+
+const viewReport = (record) => {
+  // Render Markdown to HTML FIRST, THEN wrap the generated HTML in blocks.
+  let renderedHtml = md.render(record.reportContent)
+  let processedHtml = renderedHtml.replace(/(<h3.*?>.*?<\/h3>[\s\S]*?)(?=<h3|$)/gi, '<div class="report-block">\n$1\n</div>')
+  currentReportHtml.value = processedHtml
+  reportDialogVisible.value = true
+}
+
 const goToPost = (post) => {
-  // Navigation logic
-  // Since we don't have direct post links yet, we redirect to module
-  // Ideally should navigate to detail anchor
+  // If it's a favorite resource, navigate to Treasure with search params
+  if (post.isFavorite) {
+    // Determine the keyword to search for based on resource type
+    // For images, music, videos, articles: search by title
+    // For quotes (type 1): search by content
+    const keyword = post.resourceType === 1 ? post.content : post.title
+    
+    router.push({
+      path: '/treasure',
+      query: {
+        type: post.resourceType,
+        keyword: keyword
+      }
+    })
+    return
+  }
+  
+  // Navigation logic for regular posts
   if (post.type === 1) {
     router.push('/treehole')
   } else {
@@ -642,5 +847,36 @@ onMounted(() => {
   .left-panel {
     width: 100%;
   }
+}
+.report-dialog .el-dialog__body {
+  padding: 0;
+}
+.report-content-scroll {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+.assessment-meta {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+.score-badge, .level-badge {
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.score-badge {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+.level-badge.normal {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+.level-badge.warning {
+  background: #fdf6ec;
+  color: #e6a23c;
 }
 </style>
