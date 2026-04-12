@@ -4,7 +4,7 @@ import { useUserStore } from '../stores/user'
 import router from '../router'
 
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || '/api'),
   timeout: 60000 // 延长到 60 秒，避免 AI 回复慢导致超时
 })
 
