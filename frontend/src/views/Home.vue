@@ -43,6 +43,34 @@
             <div class="card-bg-shape"></div>
           </div>
           
+          <div class="feature-card user-search-card" @click="$router.push('/find')">
+            <div class="card-icon"><el-icon><Search /></el-icon></div>
+            <h3>寻找他人</h3>
+            <p>通过心理画像，发现与你频率相同的同行者。</p>
+            <div class="card-bg-shape"></div>
+          </div>
+          
+          <div class="feature-card message-card" @click="$router.push('/chat')">
+            <div class="card-icon"><el-icon><Message /></el-icon></div>
+            <h3>消息中心</h3>
+            <p>不错过任何一次温暖的问候与交流。</p>
+            <div class="card-bg-shape"></div>
+          </div>
+          
+          <div class="feature-card ai-assistant-card" @click="$router.push('/ai-chat')">
+            <div class="card-icon"><el-icon><Service /></el-icon></div>
+            <h3>心理助手</h3>
+            <p>全天候的智能倾听者，为您提供即时心理支持。</p>
+            <div class="card-bg-shape"></div>
+          </div>
+          
+          <div class="feature-card profile-card" @click="$router.push('/profile')">
+            <div class="card-icon"><el-icon><Avatar /></el-icon></div>
+            <h3>个人中心</h3>
+            <p>管理您的个人信息，查看属于您的心灵足迹。</p>
+            <div class="card-bg-shape"></div>
+          </div>
+          
           <div class="feature-card contact-card" id="contact-section" @click="$router.push('/contact')">
             <div class="card-icon"><el-icon><PhoneFilled /></el-icon></div>
             <h3>联系我们</h3>
@@ -61,7 +89,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { ChatDotRound, Star, User, DataAnalysis, PhoneFilled, ArrowLeft, ArrowRight, Search, Message, Service, Avatar } from '@element-plus/icons-vue'
 
 const trackRef = ref(null)
 
@@ -245,9 +273,17 @@ const scrollNext = () => {
 .treasure-card .card-bg-shape { background: #67c23a; }
 .community-card .card-bg-shape { background: #e6a23c; }
 .assessment-card .card-bg-shape { background: #9c27b0; }
+.user-search-card .card-bg-shape { background: #3f51b5; }
+.message-card .card-bg-shape { background: #00bcd4; }
+.ai-assistant-card .card-bg-shape { background: #009688; }
+.profile-card .card-bg-shape { background: #795548; }
 .contact-card .card-bg-shape { background: #ff5722; }
 
 .assessment-card .card-icon { background: #f3e5f5; color: #9c27b0; }
+.user-search-card .card-icon { background: #e8eaf6; color: #3f51b5; }
+.message-card .card-icon { background: #e0f7fa; color: #00bcd4; }
+.ai-assistant-card .card-icon { background: #e0f2f1; color: #009688; }
+.profile-card .card-icon { background: #efebe9; color: #795548; }
 .contact-card .card-icon { background: #fbe9e7; color: #ff5722; }
 
 .feature-card:hover .card-bg-shape {

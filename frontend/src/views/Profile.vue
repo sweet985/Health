@@ -6,7 +6,7 @@
         <el-card class="user-card" shadow="hover">
           <div class="avatar-section">
             <div class="avatar-wrapper">
-              <el-avatar :size="100" :src="form.avatar" class="user-avatar">
+              <el-avatar :key="form.avatar" :size="100" :src="form.avatar" class="user-avatar">
                 {{ form.username?.charAt(0)?.toUpperCase() }}
               </el-avatar>
               <div class="edit-avatar-btn" @click="showAvatarDialog">
@@ -61,7 +61,7 @@
         <el-card class="content-card" shadow="never">
           <template #header>
             <div class="content-header">
-              <span class="title">我的发布</span>
+              <span class="title">我的空间</span>
               <el-tabs v-model="activeTab" @tab-click="filterPosts" class="custom-tabs">
                 <el-tab-pane label="全部" name="all"></el-tab-pane>
                 <el-tab-pane label="树洞" name="treehole"></el-tab-pane>
@@ -220,10 +220,26 @@
     </el-dialog>
 
     <!-- Avatar Edit Dialog -->
-    <el-dialog v-model="avatarDialogVisible" title="修改头像" width="400px" center>
+    <el-dialog v-model="avatarDialogVisible" title="修改头像" width="500px" center>
+      <div class="preset-avatars">
+        <p class="preset-title">选择预设头像：</p>
+        <div class="avatar-grid">
+          <div 
+            v-for="(preset, index) in presetAvatars" 
+            :key="index"
+            class="preset-item"
+            :class="{ active: form.avatar === preset.url }"
+            @click="form.avatar = preset.url"
+          >
+            <el-avatar :size="60" :src="preset.url" />
+            <span class="preset-name">{{ preset.name }}</span>
+          </div>
+        </div>
+      </div>
+      <el-divider>或输入自定义图片链接</el-divider>
       <el-input v-model="form.avatar" placeholder="输入头像图片链接 URL" />
       <div class="avatar-preview" v-if="form.avatar">
-        <p>预览：</p>
+        <p>当前预览：</p>
         <el-avatar :size="80" :src="form.avatar" />
       </div>
       <template #footer>
@@ -271,6 +287,17 @@ const mbtiOptions = [
   'ESFJ', 'ISFJ', 'ENFJ', 'INFJ', 
   'ESTP', 'ISTP', 'ENTP', 'INTP', 
   'ESFP', 'ISFP', 'ENFP', 'INFP'
+]
+
+const presetAvatars = [
+  { name: '可爱小猫', url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=400&fit=crop' },
+  { name: '治愈小狗', url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&h=400&fit=crop' },
+  { name: '花花草草', url: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=400&fit=crop' },
+  { name: '阳光女孩', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop' },
+  { name: '清爽男孩', url: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=400&h=400&fit=crop' },
+  { name: '美丽风景', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop' },
+  { name: '呆萌熊猫', url: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&h=400&fit=crop' },
+  { name: '极简静物', url: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400&h=400&fit=crop' }
 ]
 
 // Initialize
@@ -430,12 +457,19 @@ const saveProfile = async () => {
 }
 
 const showAvatarDialog = () => {
+  // 确保每次打开弹窗时，输入框里的值是最新的
+  form.value.avatar = userStore.userInfo.avatar || ''
   avatarDialogVisible.value = true
 }
 
 const saveAvatar = async () => {
+  const finalAvatar = form.value.avatar ? form.value.avatar.trim() : ''
+  if (!finalAvatar) {
+    ElMessage.warning('请选择或输入头像链接')
+    return
+  }
   try {
-    await request.post('/user/update/avatar', { avatar: form.value.avatar })
+    await request.post('/user/update/avatar', { avatar: finalAvatar })
     ElMessage.success('头像已更新')
     avatarDialogVisible.value = false
     await refreshUserInfo()
@@ -829,6 +863,54 @@ onMounted(() => {
 .avatar-preview {
   margin-top: 20px;
   text-align: center;
+}
+
+.preset-avatars {
+  margin-bottom: 20px;
+}
+
+.preset-title {
+  margin: 0 0 15px 0;
+  font-weight: bold;
+  color: #606266;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.preset-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.preset-item:hover {
+  background-color: #f5f7fa;
+  transform: translateY(-2px);
+}
+
+.preset-item.active {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.preset-name {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.preset-item.active .preset-name {
+  color: #409eff;
+  font-weight: bold;
 }
 
 .animate-in {

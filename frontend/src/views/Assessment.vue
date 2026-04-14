@@ -838,7 +838,11 @@ const closeTest = () => {
   line-height: 1.6;
 }
 
+</style>
+<style>
 @import 'github-markdown-css/github-markdown-light.css';
+</style>
+<style scoped>
 
 /* Fix el-dialog body scrolling */
 :deep(.el-dialog__body) {
