@@ -1,17 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
+// Eager load core components that are frequently accessed to prevent initial navigation delay
+import Layout from '../views/Layout.vue'
+import Home from '../views/Home.vue'
+import Login from '../views/Login.vue'
+
 const routes = [
   {
     path: '/login',
-    component: () => import('../views/Login.vue')
+    component: Login
   },
   {
     path: '/',
-    component: () => import('../views/Layout.vue'),
+    component: Layout,
     redirect: '/home',
     children: [
-      { path: 'home', component: () => import('../views/Home.vue') },
+      { path: 'home', component: Home },
+      // Keep other heavy/less frequent routes as lazy-loaded
       { path: 'treehole', component: () => import('../views/TreeHole.vue') },
       { path: 'treasure', component: () => import('../views/Treasure.vue') },
       { path: 'community', component: () => import('../views/Community.vue') },
