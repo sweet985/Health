@@ -179,7 +179,7 @@ const scrollNext = () => {
   flex: 0 0 310px; /* Fixed width for each card */
   background: #fff;
   border-radius: 20px;
-  padding: 30px 20px;
+  padding: 35px 20px 20px;
   text-align: center;
   height: 280px;
   cursor: pointer;
@@ -189,7 +189,7 @@ const scrollNext = () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   box-sizing: border-box;
 }
@@ -247,7 +247,7 @@ const scrollNext = () => {
 
 .feature-card h3 {
   font-size: 1.5rem;
-  margin-bottom: 15px;
+  margin: 0 0 15px 0;
   color: #333;
 }
 
@@ -255,6 +255,7 @@ const scrollNext = () => {
   color: #666;
   line-height: 1.6;
   font-size: 1rem;
+  margin: 0;
 }
 
 /* Background decorations */
