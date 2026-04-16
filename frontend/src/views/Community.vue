@@ -273,12 +273,25 @@ const loadPosts = async (page = 1) => {
         keyword: keyword.value
       } 
     })
-    posts.value = res.records.map(p => ({ 
-      ...p, 
-      showComments: false, 
-      comments: [], 
-      newComment: '' 
-    }))
+    
+    // Preserve UI states before updating
+    const stateMap = new Map(posts.value.map(p => [p.id, {
+      showComments: p.showComments,
+      comments: p.comments,
+      newComment: p.newComment
+    }]))
+
+    posts.value = res.records.map(p => {
+      const oldState = stateMap.get(p.id) || {
+        showComments: false,
+        comments: [],
+        newComment: ''
+      }
+      return { 
+        ...p, 
+        ...oldState
+      }
+    })
     total.value = res.total
   } catch (e) {
     console.error(e)

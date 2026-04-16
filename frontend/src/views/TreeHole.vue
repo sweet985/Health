@@ -128,28 +128,26 @@ const userStore = useUserStore()
 const loadPosts = async (page = 1) => {
   try {
     const res = await request.get('/post/list', { params: { page, size: 10, type: 1 } })
+    
+    // Preserve UI states before updating
+    const stateMap = new Map(posts.value.map(p => [p.id, {
+      showComments: p.showComments,
+      comments: p.comments,
+      newComment: p.newComment,
+      commentPseudonym: p.commentPseudonym
+    }]))
+
     posts.value = res.records.map(p => {
-      // Check if current user is author or has commented to pre-fill pseudonym
-      let myPseudonym = ''
-      if (p.userId === userStore.userInfo.id) {
-         // I am the author
-         // We need to know author's pseudonym. 
-         // The post object has 'username' which is "Pseudonym (化名)" or "匿名用户"
-         // But we don't have the raw pseudonym field in the responseDTO usually (unless we add it)
-         // Let's rely on backend logic: if I am author, backend forces my pseudonym.
-         // So frontend doesn't need to send it again?
-         // Yes, backend says: "if comment.userId == post.userId, comment.setPseudonym(post.getPseudonym())"
-         // So we can hide the input or show it disabled with value.
-         // But we don't have the raw pseudonym value easily here without parsing or adding field.
-         // Let's just hide the input if I am the author.
+      const oldState = stateMap.get(p.id) || {
+        showComments: false,
+        comments: [],
+        newComment: '',
+        commentPseudonym: ''
       }
       
       return { 
         ...p, 
-        showComments: false, 
-        comments: [], 
-        newComment: '',
-        commentPseudonym: '',
+        ...oldState,
         isAuthor: p.userId === userStore.userInfo.id
       }
     })
