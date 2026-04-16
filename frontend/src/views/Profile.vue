@@ -442,14 +442,25 @@ const saveProfile = async () => {
     if (form.value.mbti !== userStore.userInfo.mbti) {
       updates.push(request.post('/user/update/mbti', { mbti: form.value.mbti }))
     }
+    
+    let passwordChanged = false
     if (password.value) {
       updates.push(request.post('/user/update/password', { password: password.value }))
+      passwordChanged = true
     }
 
     await Promise.all(updates)
     ElMessage.success('资料已更新')
     dialogVisible.value = false
     password.value = ''
+    
+    if (passwordChanged) {
+      ElMessage.success('密码已修改，请重新登录')
+      userStore.logout()
+      router.push('/login')
+      return
+    }
+    
     await refreshUserInfo()
   } catch (e) {
     // Error handled
