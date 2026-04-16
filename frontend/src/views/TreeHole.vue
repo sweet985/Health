@@ -94,9 +94,9 @@
              class="dark-input-small comment-content"
              @keyup.enter="submitComment(post)"
            >
-             <template #append>
-               <el-button @click="post.showComments = false; post.newComment = ''" style="border-right: 1px solid #4a4a6a; border-radius: 0;">取消</el-button>
-               <el-button type="primary" @click="submitComment(post)">发送</el-button>
+             <template #suffix>
+               <el-button link type="info" @click="post.showComments = false; post.newComment = ''" style="margin-right: 10px; color: #a29bfe;">取消</el-button>
+               <el-button link type="primary" @click="submitComment(post)">发送</el-button>
              </template>
            </el-input>
         </div>
