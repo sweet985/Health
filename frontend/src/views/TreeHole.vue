@@ -95,7 +95,8 @@
              @keyup.enter="submitComment(post)"
            >
              <template #append>
-               <el-button @click="submitComment(post)">发送</el-button>
+               <el-button @click="post.showComments = false; post.newComment = ''">取消</el-button>
+               <el-button type="primary" @click="submitComment(post)">发送</el-button>
              </template>
            </el-input>
         </div>

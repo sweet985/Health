@@ -144,6 +144,7 @@
                   @keyup.enter="submitComment(post)"
                 >
                   <template #suffix>
+                    <el-button type="info" link @click="post.showComments = false; post.newComment = ''" style="margin-right: 10px;">取消</el-button>
                     <el-button type="primary" link @click="submitComment(post)">发送</el-button>
                   </template>
                 </el-input>
