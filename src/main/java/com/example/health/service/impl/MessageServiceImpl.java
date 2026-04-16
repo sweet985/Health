@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.health.entity.Message;
 import com.example.health.mapper.MessageMapper;
 import com.example.health.service.MessageService;
+import com.example.health.websocket.WebSocketServer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,10 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         message.setDeletedBySender(false);
         message.setDeletedByReceiver(false);
         save(message);
+        
+        // Push notification via WebSocket
+        WebSocketServer.sendMessageToUser(receiverId, "NEW_MESSAGE");
+        WebSocketServer.sendMessageToUser(senderId, "NEW_MESSAGE");
     }
 
     @Override

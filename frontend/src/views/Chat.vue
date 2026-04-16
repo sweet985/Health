@@ -106,8 +106,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import request from '../utils/request'
+import { wsManager } from '../utils/websocket'
 import { useUserStore } from '../stores/user'
 import { useRoute } from 'vue-router'
 import { ChatDotRound, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
@@ -237,7 +238,35 @@ const scrollToBottom = () => {
   })
 }
 
-onMounted(loadFriends)
+const handleNewMessage = () => {
+  loadFriends()
+  if (currentFriend.value) {
+    loadMessages()
+  }
+}
+
+let pollTimer = null
+
+onMounted(() => {
+  loadFriends()
+  wsManager.on('NEW_MESSAGE', handleNewMessage)
+  
+  // Fallback short polling in case WebSocket fails (e.g., Vercel proxy issues)
+  pollTimer = setInterval(() => {
+    loadFriends()
+    if (currentFriend.value) {
+      // only load messages if we are at bottom or close to it, or just reload quietly
+      loadMessages()
+    }
+  }, 5000)
+})
+
+onUnmounted(() => {
+  wsManager.off('NEW_MESSAGE', handleNewMessage)
+  if (pollTimer) {
+    clearInterval(pollTimer)
+  }
+})
 </script>
 
 <style scoped>

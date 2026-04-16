@@ -112,10 +112,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/user'
-import { ElMessage } from 'element-plus'
+import { wsManager } from '../utils/websocket'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Star, ChatDotRound } from '@element-plus/icons-vue'
 
 const content = ref('')
@@ -234,7 +235,24 @@ const formatTime = (time) => {
   return time.replace('T', ' ').substring(0, 16)
 }
 
-onMounted(() => loadPosts())
+const handleNewPost = () => {
+  loadPosts()
+}
+
+let pollTimer = null
+
+onMounted(() => {
+  loadPosts()
+  wsManager.on('NEW_POST_1', handleNewPost)
+  pollTimer = setInterval(() => {
+    loadPosts()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  wsManager.off('NEW_POST_1', handleNewPost)
+  if (pollTimer) clearInterval(pollTimer)
+})
 </script>
 
 <style scoped>

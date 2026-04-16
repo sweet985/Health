@@ -12,6 +12,7 @@ import com.example.health.mapper.PostLikeMapper;
 import com.example.health.mapper.PostMapper;
 import com.example.health.mapper.UserMapper;
 import com.example.health.service.PostService;
+import com.example.health.websocket.WebSocketServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         post.setLikeCount(0);
         post.setReplyCount(0);
         save(post);
+        
+        // Broadcast new post event
+        WebSocketServer.broadcastMessage("NEW_POST_" + post.getType());
     }
 
     @Override
@@ -112,6 +116,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             post.setLikeCount(post.getLikeCount() + 1);
         }
         updateById(post);
+        WebSocketServer.broadcastMessage("NEW_POST_" + post.getType());
     }
 
     @Override
@@ -159,6 +164,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         commentMapper.insert(comment);
         post.setReplyCount(post.getReplyCount() + 1);
         updateById(post);
+        WebSocketServer.broadcastMessage("NEW_POST_" + post.getType());
     }
 
     @Override
@@ -199,6 +205,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         if (post != null) {
             post.setReplyCount(Math.max(0, post.getReplyCount() - 1));
             updateById(post);
+            WebSocketServer.broadcastMessage("NEW_POST_" + post.getType());
         }
     }
 

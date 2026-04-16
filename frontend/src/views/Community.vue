@@ -244,9 +244,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/user'
+import { wsManager } from '../utils/websocket'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Star, ChatDotRound, Share, MoreFilled, Picture, Location, Link, Search, Collection, TrendCharts, Plus, Delete } from '@element-plus/icons-vue'
 
@@ -415,9 +416,26 @@ const formatTime = (time) => {
   return time.replace('T', ' ').substring(0, 16)
 }
 
+const handleNewPost = () => {
+  // Option 1: auto reload. Option 2: show a "new posts" button. Here we auto reload.
+  loadPosts()
+}
+
+let pollTimer = null
+
 onMounted(() => {
   loadPosts()
   loadFriends()
+  wsManager.on('NEW_POST_2', handleNewPost)
+  
+  pollTimer = setInterval(() => {
+    loadPosts()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  wsManager.off('NEW_POST_2', handleNewPost)
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 

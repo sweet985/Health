@@ -37,10 +37,20 @@
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 import GlobalMusicPlayer from '../components/GlobalMusicPlayer.vue'
+import { wsManager } from '../utils/websocket'
+import { onMounted, onUnmounted } from 'vue'
 
 const userStore = useUserStore()
 
 const router = useRouter()
+
+onMounted(() => {
+  wsManager.connect()
+})
+
+onUnmounted(() => {
+  wsManager.disconnect()
+})
 
 const handleImageError = (e) => {
   e.target.style.display = 'none'
