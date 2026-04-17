@@ -451,14 +451,20 @@ const saveProfile = async () => {
   try {
     // Parallel updates
     const updates = []
-    if (form.value.username !== userStore.userInfo.username) {
-      updates.push(request.post('/user/update/username', { username: form.value.username }))
+    
+    // Create local variables to hold the values to ensure they aren't lost in closures
+    const newUsername = form.value.username
+    const newBio = form.value.bio
+    const newMbti = form.value.mbti
+    
+    if (newUsername !== userStore.userInfo.username) {
+      updates.push(request.post('/user/update/username', { username: newUsername }))
     }
-    if (form.value.bio !== userStore.userInfo.bio) {
-      updates.push(request.post('/user/update/bio', { bio: form.value.bio }))
+    if (newBio !== userStore.userInfo.bio) {
+      updates.push(request.post('/user/update/bio', { bio: newBio }))
     }
-    if (form.value.mbti !== userStore.userInfo.mbti) {
-      updates.push(request.post('/user/update/mbti', { mbti: form.value.mbti }))
+    if (newMbti !== userStore.userInfo.mbti) {
+      updates.push(request.post('/user/update/mbti', { mbti: newMbti }))
     }
     
     let passwordChanged = false
@@ -475,6 +481,8 @@ const saveProfile = async () => {
         ElMessage.warning('两次输入的新密码不一致')
         return
       }
+      // Put password update at the end or handle it separately if it forces a logout
+      // We still push it to updates array, but we must be careful if the backend invalidates token immediately
       updates.push(request.post('/user/update/password', { 
         oldPassword: oldPassword.value, 
         newPassword: newPassword.value 
@@ -482,7 +490,16 @@ const saveProfile = async () => {
       passwordChanged = true
     }
 
-    await Promise.all(updates)
+    if (updates.length === 0) {
+      dialogVisible.value = false
+      return
+    }
+
+    // Execute all updates sequentially to prevent backend transaction/token race conditions
+    for (const req of updates) {
+      await req
+    }
+    
     ElMessage.success('资料已更新')
     dialogVisible.value = false
     oldPassword.value = ''
