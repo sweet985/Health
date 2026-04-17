@@ -181,12 +181,12 @@
     </el-dialog>
 
     <!-- Edit Profile Dialog -->
-    <el-dialog v-model="dialogVisible" title="编辑个人资料" width="550px" center destroy-on-close class="custom-dialog profile-edit-dialog">
+    <el-dialog v-model="dialogVisible" title="✨ 编辑个人资料" width="580px" center destroy-on-close class="beautiful-profile-dialog">
       <el-form :model="form" label-position="top" class="edit-form">
-        <div class="form-section">
+        <div class="form-section basic-section">
           <h4 class="section-title">基本信息</h4>
           <el-form-item label="用户名">
-            <el-input v-model="form.username" placeholder="给自己起个好听的名字" class="custom-input" />
+            <el-input v-model="form.username" placeholder="给自己起个好听的名字" class="beautiful-input" />
           </el-form-item>
           
           <el-form-item label="个人简介">
@@ -197,39 +197,40 @@
               maxlength="50" 
               show-word-limit 
               placeholder="介绍一下自己吧..."
-              class="custom-textarea"
+              class="beautiful-textarea"
             />
           </el-form-item>
 
           <el-form-item label="MBTI 人格">
-            <el-select v-model="form.mbti" placeholder="选择你的MBTI人格" class="custom-select">
+            <el-select v-model="form.mbti" placeholder="选择你的MBTI人格" class="beautiful-select">
               <el-option v-for="type in mbtiOptions" :key="type" :label="type" :value="type">
-                <span style="float: left">{{ type }}</span>
-                <span style="float: right; color: #8492a6; font-size: 13px">{{ getMbtiDesc(type) }}</span>
+                <span style="float: left; font-weight: bold;">{{ type }}</span>
+                <span style="float: right; color: #a0aec0; font-size: 13px">{{ getMbtiDesc(type) }}</span>
               </el-option>
             </el-select>
           </el-form-item>
         </div>
         
-        <div class="form-section security-section">
-          <h4 class="section-title">账号安全 <span class="subtitle-tip">(留空则不修改密码)</span></h4>
+        <div class="form-section pwd-section">
+          <div class="pwd-bg-element"></div>
+          <h4 class="section-title pwd-title">修改密码 <span class="subtitle-tip">(留空则不修改密码)</span></h4>
           <el-form-item label="旧密码">
-            <el-input v-model="oldPassword" type="password" placeholder="输入当前密码以验证身份" show-password class="custom-input" />
+            <el-input v-model="oldPassword" type="password" placeholder="输入当前密码以验证身份" show-password class="beautiful-input pwd-input" />
           </el-form-item>
           <div class="password-row">
             <el-form-item label="新密码" class="flex-1">
-              <el-input v-model="newPassword" type="password" placeholder="输入新密码" show-password class="custom-input" />
+              <el-input v-model="newPassword" type="password" placeholder="输入新密码" show-password class="beautiful-input pwd-input" />
             </el-form-item>
             <el-form-item label="确认新密码" class="flex-1">
-              <el-input v-model="confirmPassword" type="password" placeholder="再次输入新密码" show-password class="custom-input" />
+              <el-input v-model="confirmPassword" type="password" placeholder="再次输入新密码" show-password class="beautiful-input pwd-input" />
             </el-form-item>
           </div>
         </div>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false" class="cancel-btn" round>取消</el-button>
-          <el-button type="primary" @click="saveProfile" class="save-btn" round>保存修改</el-button>
+          <el-button @click="dialogVisible = false" class="beautiful-cancel-btn" round>取消</el-button>
+          <el-button type="primary" @click="saveProfile" class="beautiful-save-btn" round>保存修改</el-button>
         </span>
       </template>
     </el-dialog>
@@ -810,94 +811,168 @@ onMounted(() => {
 }
 
 /* Edit Profile Dialog Styling */
-.profile-edit-dialog .el-dialog__header {
-  padding-top: 30px;
-  font-weight: bold;
+.beautiful-profile-dialog {
+  border-radius: 20px !important;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1) !important;
+}
+
+.beautiful-profile-dialog .el-dialog__header {
+  padding: 25px 25px 15px;
+  margin-right: 0;
+  background: linear-gradient(to right, #fdfbfb, #ebedee);
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.beautiful-profile-dialog .el-dialog__title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #2d3748;
+  letter-spacing: 1px;
+}
+
+.beautiful-profile-dialog .el-dialog__body {
+  padding: 30px 25px;
+  background: #f8fafc;
+}
+
+.beautiful-profile-dialog .el-dialog__footer {
+  padding: 20px 25px 25px;
+  background: #f8fafc;
+  border-top: 1px solid #f0f2f5;
 }
 
 .edit-form {
-  padding: 0 10px;
+  padding: 0;
 }
 
 .form-section {
-  background: #fcfcfd;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 1px solid #ebeef5;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
-.security-section {
-  background: #fffafa;
-  border-color: #fde2e2;
+.form-section:hover {
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.basic-section {
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+}
+
+.pwd-section {
+  background: linear-gradient(145deg, #f3f4fb 0%, #ebedfc 100%);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.pwd-bg-element {
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(167,119,227,0.15) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .section-title {
-  margin: 0 0 20px 0;
-  font-size: 16px;
-  color: #303133;
+  margin: 0 0 24px 0;
+  font-size: 17px;
+  color: #2d3748;
   display: flex;
   align-items: center;
+  font-weight: 700;
 }
 
 .section-title::before {
   content: '';
   display: inline-block;
-  width: 4px;
-  height: 16px;
-  background: #409eff;
-  border-radius: 2px;
-  margin-right: 8px;
+  width: 5px;
+  height: 18px;
+  background: linear-gradient(to bottom, #4facfe, #00f2fe);
+  border-radius: 4px;
+  margin-right: 10px;
 }
 
-.security-section .section-title::before {
-  background: #f56c6c;
+.pwd-title::before {
+  background: linear-gradient(to bottom, #667eea, #764ba2);
 }
 
 .subtitle-tip {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: #718096;
   font-weight: normal;
-  margin-left: 10px;
+  margin-left: 12px;
+  background: rgba(255,255,255,0.6);
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
-.custom-input :deep(.el-input__wrapper),
-.custom-textarea :deep(.el-textarea__inner),
-.custom-select :deep(.el-input__wrapper) {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
-  transition: all 0.3s;
+.beautiful-input :deep(.el-input__wrapper),
+.beautiful-textarea :deep(.el-textarea__inner),
+.beautiful-select :deep(.el-input__wrapper) {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02) !important;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.custom-input :deep(.el-input__wrapper:hover),
-.custom-textarea :deep(.el-textarea__inner:hover),
-.custom-select :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+.beautiful-input :deep(.el-input__wrapper:hover),
+.beautiful-textarea :deep(.el-textarea__inner:hover),
+.beautiful-select :deep(.el-input__wrapper:hover),
+.beautiful-input :deep(.el-input__wrapper.is-focus),
+.beautiful-textarea :deep(.el-textarea__inner:focus) {
+  background-color: #ffffff;
+  border-color: #a0aec0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+.pwd-input :deep(.el-input__wrapper) {
+  background-color: #ffffff;
 }
 
 .password-row {
   display: flex;
-  gap: 15px;
+  gap: 20px;
 }
 
 .flex-1 {
   flex: 1;
 }
 
-.cancel-btn, .save-btn {
-  padding: 10px 25px;
-  font-weight: bold;
+.beautiful-cancel-btn {
+  padding: 12px 30px;
+  font-weight: 600;
+  color: #4a5568;
+  border-color: #cbd5e0;
 }
 
-.save-btn {
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+.beautiful-cancel-btn:hover {
+  color: #2d3748;
+  background: #edf2f7;
+  border-color: #a0aec0;
+}
+
+.beautiful-save-btn {
+  padding: 12px 35px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  box-shadow: 0 4px 15px rgba(110, 142, 251, 0.3);
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  transition: all 0.3s;
 }
 
-.save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(110, 142, 251, 0.4);
+.beautiful-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
 }
 
 .custom-tabs :deep(.el-tabs__nav-wrap::after) {
