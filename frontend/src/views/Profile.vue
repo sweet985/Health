@@ -516,6 +516,8 @@ const saveProfile = async () => {
     }
     
     await refreshUserInfo()
+    // Optional: reload here ONLY after manual save, not on page load
+    window.location.reload()
   } catch (e) {
     // Error handled
   }
@@ -538,6 +540,8 @@ const saveAvatar = async () => {
     ElMessage.success('头像已更新')
     avatarDialogVisible.value = false
     await refreshUserInfo()
+    // Optional: reload here ONLY after manual save
+    window.location.reload()
   } catch (e) {}
 }
 
@@ -548,8 +552,6 @@ const refreshUserInfo = async () => {
     const info = await request.get('/user/info')
     userStore.setUserInfo(info)
     form.value = { ...info }
-    // Force a page reload to refresh all components if reactivity fails
-    window.location.reload()
   } catch (e) {}
 }
 
