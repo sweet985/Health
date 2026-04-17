@@ -95,12 +95,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, ArrowRight, Check } from '@element-plus/icons-vue'
+import { wsManager } from '../utils/websocket'
 
 const activeTab = ref('login')
 const loginForm = ref({ username: '', password: '' })
@@ -109,6 +110,11 @@ const loading = ref(false)
 const userStore = useUserStore()
 const router = useRouter()
 const hasLogo = ref(true)
+
+onMounted(() => {
+  // Ensure any lingering websocket connection is closed before login/register
+  wsManager.disconnect()
+})
 
 const handleImageError = (e) => {
   hasLogo.value = false

@@ -508,8 +508,10 @@ const saveProfile = async () => {
     
     if (passwordChanged) {
       ElMessage.success('密码已修改，请重新登录')
-      userStore.logout()
-      router.push('/login')
+      setTimeout(() => {
+        userStore.logout()
+        router.push('/login')
+      }, 500)
       return
     }
     
@@ -540,9 +542,15 @@ const saveAvatar = async () => {
 }
 
 const refreshUserInfo = async () => {
-  const info = await request.get('/user/info')
-  userStore.setUserInfo(info)
-  form.value = { ...info }
+  try {
+    // Add a small delay to ensure backend DB transaction is committed
+    await new Promise(resolve => setTimeout(resolve, 300))
+    const info = await request.get('/user/info')
+    userStore.setUserInfo(info)
+    form.value = { ...info }
+    // Force a page reload to refresh all components if reactivity fails
+    window.location.reload()
+  } catch (e) {}
 }
 
 const deleteAccount = () => {
