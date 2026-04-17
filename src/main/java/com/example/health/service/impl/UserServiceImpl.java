@@ -66,8 +66,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void updatePassword(Long userId, String newPassword) {
+    public void updatePasswordWithOld(Long userId, String oldPassword, String newPassword) {
         User user = getById(userId);
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("旧密码不正确");
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         updateById(user);
     }

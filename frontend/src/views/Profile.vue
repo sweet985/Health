@@ -207,8 +207,15 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="修改密码 (留空则不修改)">
-          <el-input v-model="password" type="password" placeholder="输入新密码" show-password />
+        <el-divider>修改密码</el-divider>
+        <el-form-item label="旧密码">
+          <el-input v-model="oldPassword" type="password" placeholder="输入旧密码" show-password />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="newPassword" type="password" placeholder="输入新密码" show-password />
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input v-model="confirmPassword" type="password" placeholder="再次输入新密码" show-password />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -273,7 +280,9 @@ const form = ref({
   bio: '',
   mbti: ''
 })
-const password = ref('')
+const oldPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
 const myPosts = ref([])
 const myFavorites = ref([])
 const myAssessments = ref([])
@@ -444,15 +453,32 @@ const saveProfile = async () => {
     }
     
     let passwordChanged = false
-    if (password.value) {
-      updates.push(request.post('/user/update/password', { password: password.value }))
+    if (oldPassword.value || newPassword.value || confirmPassword.value) {
+      if (!oldPassword.value) {
+        ElMessage.warning('请输入旧密码')
+        return
+      }
+      if (!newPassword.value) {
+        ElMessage.warning('请输入新密码')
+        return
+      }
+      if (newPassword.value !== confirmPassword.value) {
+        ElMessage.warning('两次输入的新密码不一致')
+        return
+      }
+      updates.push(request.post('/user/update/password', { 
+        oldPassword: oldPassword.value, 
+        newPassword: newPassword.value 
+      }))
       passwordChanged = true
     }
 
     await Promise.all(updates)
     ElMessage.success('资料已更新')
     dialogVisible.value = false
-    password.value = ''
+    oldPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
     
     if (passwordChanged) {
       ElMessage.success('密码已修改，请重新登录')

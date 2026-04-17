@@ -27,9 +27,19 @@ public class UserController {
 
     @PostMapping("/update/password")
     public CommonResult<String> updatePassword(@RequestBody Map<String, String> params) {
-        String newPassword = params.get("password");
-        userService.updatePassword(getCurrentUserId(), newPassword);
-        return CommonResult.success("修改成功");
+        String oldPassword = params.get("oldPassword");
+        String newPassword = params.get("newPassword");
+        
+        if (oldPassword == null || oldPassword.trim().isEmpty() || newPassword == null || newPassword.trim().isEmpty()) {
+            return CommonResult.failed("旧密码或新密码不能为空");
+        }
+        
+        try {
+            userService.updatePasswordWithOld(getCurrentUserId(), oldPassword, newPassword);
+            return CommonResult.success("修改成功");
+        } catch (RuntimeException e) {
+            return CommonResult.failed(e.getMessage());
+        }
     }
 
     @PostMapping("/update/username")
