@@ -181,47 +181,55 @@
     </el-dialog>
 
     <!-- Edit Profile Dialog -->
-    <el-dialog v-model="dialogVisible" title="编辑个人资料" width="500px" center destroy-on-close class="custom-dialog">
-      <el-form :model="form" label-position="top">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="给自己起个好听的名字" />
-        </el-form-item>
-        
-        <el-form-item label="个人简介">
-          <el-input 
-            v-model="form.bio" 
-            type="textarea" 
-            :rows="3"
-            maxlength="50" 
-            show-word-limit 
-            placeholder="介绍一下自己吧..."
-          />
-        </el-form-item>
+    <el-dialog v-model="dialogVisible" title="编辑个人资料" width="550px" center destroy-on-close class="custom-dialog profile-edit-dialog">
+      <el-form :model="form" label-position="top" class="edit-form">
+        <div class="form-section">
+          <h4 class="section-title">基本信息</h4>
+          <el-form-item label="用户名">
+            <el-input v-model="form.username" placeholder="给自己起个好听的名字" class="custom-input" />
+          </el-form-item>
+          
+          <el-form-item label="个人简介">
+            <el-input 
+              v-model="form.bio" 
+              type="textarea" 
+              :rows="3"
+              maxlength="50" 
+              show-word-limit 
+              placeholder="介绍一下自己吧..."
+              class="custom-textarea"
+            />
+          </el-form-item>
 
-        <el-form-item label="MBTI 人格">
-          <el-select v-model="form.mbti" placeholder="选择你的MBTI人格" style="width: 100%">
-            <el-option v-for="type in mbtiOptions" :key="type" :label="type" :value="type">
-              <span style="float: left">{{ type }}</span>
-              <span style="float: right; color: #8492a6; font-size: 13px">{{ getMbtiDesc(type) }}</span>
-            </el-option>
-          </el-select>
-        </el-form-item>
+          <el-form-item label="MBTI 人格">
+            <el-select v-model="form.mbti" placeholder="选择你的MBTI人格" class="custom-select">
+              <el-option v-for="type in mbtiOptions" :key="type" :label="type" :value="type">
+                <span style="float: left">{{ type }}</span>
+                <span style="float: right; color: #8492a6; font-size: 13px">{{ getMbtiDesc(type) }}</span>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </div>
         
-        <el-divider>修改密码</el-divider>
-        <el-form-item label="旧密码">
-          <el-input v-model="oldPassword" type="password" placeholder="输入旧密码" show-password />
-        </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="newPassword" type="password" placeholder="输入新密码" show-password />
-        </el-form-item>
-        <el-form-item label="确认新密码">
-          <el-input v-model="confirmPassword" type="password" placeholder="再次输入新密码" show-password />
-        </el-form-item>
+        <div class="form-section security-section">
+          <h4 class="section-title">账号安全 <span class="subtitle-tip">(留空则不修改密码)</span></h4>
+          <el-form-item label="旧密码">
+            <el-input v-model="oldPassword" type="password" placeholder="输入当前密码以验证身份" show-password class="custom-input" />
+          </el-form-item>
+          <div class="password-row">
+            <el-form-item label="新密码" class="flex-1">
+              <el-input v-model="newPassword" type="password" placeholder="输入新密码" show-password class="custom-input" />
+            </el-form-item>
+            <el-form-item label="确认新密码" class="flex-1">
+              <el-input v-model="confirmPassword" type="password" placeholder="再次输入新密码" show-password class="custom-input" />
+            </el-form-item>
+          </div>
+        </div>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false" round>取消</el-button>
-          <el-button type="primary" @click="saveProfile" round>保存修改</el-button>
+          <el-button @click="dialogVisible = false" class="cancel-btn" round>取消</el-button>
+          <el-button type="primary" @click="saveProfile" class="save-btn" round>保存修改</el-button>
         </span>
       </template>
     </el-dialog>
@@ -799,6 +807,97 @@ onMounted(() => {
   font-size: 1.2rem;
   font-weight: 700;
   color: #2c3e50;
+}
+
+/* Edit Profile Dialog Styling */
+.profile-edit-dialog .el-dialog__header {
+  padding-top: 30px;
+  font-weight: bold;
+}
+
+.edit-form {
+  padding: 0 10px;
+}
+
+.form-section {
+  background: #fcfcfd;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #ebeef5;
+}
+
+.security-section {
+  background: #fffafa;
+  border-color: #fde2e2;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: #303133;
+  display: flex;
+  align-items: center;
+}
+
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: #409eff;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.security-section .section-title::before {
+  background: #f56c6c;
+}
+
+.subtitle-tip {
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+  margin-left: 10px;
+}
+
+.custom-input :deep(.el-input__wrapper),
+.custom-textarea :deep(.el-textarea__inner),
+.custom-select :deep(.el-input__wrapper) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.custom-input :deep(.el-input__wrapper:hover),
+.custom-textarea :deep(.el-textarea__inner:hover),
+.custom-select :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+}
+
+.password-row {
+  display: flex;
+  gap: 15px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.cancel-btn, .save-btn {
+  padding: 10px 25px;
+  font-weight: bold;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  border: none;
+  box-shadow: 0 4px 15px rgba(110, 142, 251, 0.3);
+}
+
+.save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(110, 142, 251, 0.4);
 }
 
 .custom-tabs :deep(.el-tabs__nav-wrap::after) {
