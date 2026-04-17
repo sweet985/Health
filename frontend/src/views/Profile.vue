@@ -449,22 +449,26 @@ const removeFavorite = async (id) => {
 
 const saveProfile = async () => {
   try {
-    // Parallel updates
-    const updates = []
-    
     // Create local variables to hold the values to ensure they aren't lost in closures
     const newUsername = form.value.username
     const newBio = form.value.bio
     const newMbti = form.value.mbti
     
+    let hasUpdates = false;
+
+    // Execute updates STRICTLY sequentially (await each one) to prevent MySQL InnoDB row locks
+    // and HikariCP connection pool exhaustion which caused the 502 errors and password overwrites.
     if (newUsername !== userStore.userInfo.username) {
-      updates.push(request.post('/user/update/username', { username: newUsername }))
+      await request.post('/user/update/username', { username: newUsername })
+      hasUpdates = true
     }
     if (newBio !== userStore.userInfo.bio) {
-      updates.push(request.post('/user/update/bio', { bio: newBio }))
+      await request.post('/user/update/bio', { bio: newBio })
+      hasUpdates = true
     }
     if (newMbti !== userStore.userInfo.mbti) {
-      updates.push(request.post('/user/update/mbti', { mbti: newMbti }))
+      await request.post('/user/update/mbti', { mbti: newMbti })
+      hasUpdates = true
     }
     
     let passwordChanged = false
@@ -481,25 +485,20 @@ const saveProfile = async () => {
         ElMessage.warning('两次输入的新密码不一致')
         return
       }
-      // Put password update at the end or handle it separately if it forces a logout
-      // We still push it to updates array, but we must be careful if the backend invalidates token immediately
-      updates.push(request.post('/user/update/password', { 
+      
+      await request.post('/user/update/password', { 
         oldPassword: oldPassword.value, 
         newPassword: newPassword.value 
-      }))
+      })
       passwordChanged = true
+      hasUpdates = true
     }
 
-    if (updates.length === 0) {
+    if (!hasUpdates) {
       dialogVisible.value = false
       return
     }
 
-    // Execute all updates sequentially to prevent backend transaction/token race conditions
-    for (const req of updates) {
-      await req
-    }
-    
     ElMessage.success('资料已更新')
     dialogVisible.value = false
     oldPassword.value = ''
