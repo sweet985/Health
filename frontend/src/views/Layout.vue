@@ -19,10 +19,10 @@
         <el-menu-item index="/contact">联系我们</el-menu-item>
       </el-menu>
       <div class="user-actions">
-        <el-avatar :key="userStore.userInfo.avatar" :size="32" :src="userStore.userInfo.avatar" style="margin-right: 8px;">
-          {{ userStore.userInfo.username?.charAt(0)?.toUpperCase() }}
+        <el-avatar :key="userStore.userInfo?.avatar" :size="32" :src="userStore.userInfo?.avatar" style="margin-right: 8px;">
+          {{ userStore.userInfo?.username?.charAt(0)?.toUpperCase() || 'U' }}
         </el-avatar>
-        <span>{{ userStore.userInfo.username }}</span>
+        <span>{{ userStore.userInfo?.username || '用户' }}</span>
         <el-button link type="danger" @click="logout" style="margin-left: 10px;">退出</el-button>
       </div>
     </el-header>
