@@ -1,10 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
-// Eager load core components that are frequently accessed to prevent initial navigation delay
+// Eager load ALL components to prevent navigation delay and "no reaction" issues caused by Vercel/GFW network latency
 import Layout from '../views/Layout.vue'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
+import TreeHole from '../views/TreeHole.vue'
+import Treasure from '../views/Treasure.vue'
+import Community from '../views/Community.vue'
+import Profile from '../views/Profile.vue'
+import FindFriend from '../views/FindFriend.vue'
+import Chat from '../views/Chat.vue'
+import AiAssistant from '../views/AiAssistant.vue'
+import Assessment from '../views/Assessment.vue'
+import Diary from '../views/Diary.vue'
+import Contact from '../views/Contact.vue'
 
 const routes = [
   {
@@ -17,17 +27,16 @@ const routes = [
     redirect: '/home',
     children: [
       { path: 'home', component: Home },
-      // Keep other heavy/less frequent routes as lazy-loaded
-      { path: 'treehole', component: () => import('../views/TreeHole.vue') },
-      { path: 'treasure', component: () => import('../views/Treasure.vue') },
-      { path: 'community', component: () => import('../views/Community.vue') },
-      { path: 'profile', component: () => import('../views/Profile.vue') },
-      { path: 'find', component: () => import('../views/FindFriend.vue') },
-      { path: 'chat', component: () => import('../views/Chat.vue') },
-      { path: 'ai-chat', component: () => import('../views/AiAssistant.vue') },
-      { path: 'assessment', component: () => import('../views/Assessment.vue') },
-      { path: 'diary', component: () => import('../views/Diary.vue') },
-      { path: 'contact', component: () => import('../views/Contact.vue') }
+      { path: 'treehole', component: TreeHole },
+      { path: 'treasure', component: Treasure },
+      { path: 'community', component: Community },
+      { path: 'profile', component: Profile },
+      { path: 'find', component: FindFriend },
+      { path: 'chat', component: Chat },
+      { path: 'ai-chat', component: AiAssistant },
+      { path: 'assessment', component: Assessment },
+      { path: 'diary', component: Diary },
+      { path: 'contact', component: Contact }
     ]
   }
 ]
