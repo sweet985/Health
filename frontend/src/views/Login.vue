@@ -384,6 +384,13 @@ const handleRegister = async () => {
   font-weight: 500;
 }
 
+:deep(.custom-tabs .el-tabs__item:focus),
+:deep(.custom-tabs .el-tabs__item:focus-visible),
+:deep(.custom-tabs .el-tabs__item:active) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 :deep(.custom-tabs .el-tabs__item.is-active) {
   color: #764ba2;
 }
